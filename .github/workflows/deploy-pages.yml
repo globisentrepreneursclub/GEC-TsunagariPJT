@@ -24,11 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate config.js from secrets
+      - name: Generate config.js from secret
         run: |
-          cat <<EOF > docs/config.js
-          const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
-          const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
+          cat <<'EOF' > docs/config.js
+          ${{ secrets.CONFIGJS }}
           EOF
 
       - name: Upload artifact
