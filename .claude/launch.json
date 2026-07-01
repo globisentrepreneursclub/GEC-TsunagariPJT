@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "founder-quest",
+      "runtimeExecutable": "C:\\Users\\sakaz\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "8843", "--directory", "起業家RPG/コード"],
+      "port": 8843
+    }
+  ]
+}
