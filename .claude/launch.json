@@ -4,7 +4,7 @@
     {
       "name": "founder-quest",
       "runtimeExecutable": "C:\\Users\\sakaz\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
-      "runtimeArgs": ["-m", "http.server", "8843", "--directory", "起業家RPG/コード"],
+      "runtimeArgs": ["-m", "http.server", "8843", "--directory", "docs"],
       "port": 8843
     }
   ]
