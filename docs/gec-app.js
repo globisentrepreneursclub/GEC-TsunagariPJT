@@ -486,8 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
     toast.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(6,9,26,0.92);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 10px 6px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:92vw;transition:opacity 0.4s ease;';
     toast.innerHTML = `
       <span style="font-size:0.78rem;color:rgba(255,255,255,0.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">前回の診断：${main ? main.name : ''}タイプ</span>
-      <button onclick="goTo('reveal');this.closest('[style]').remove()" style="background:rgba(37,99,235,0.35);color:#fff;font-weight:700;border:none;border-radius:20px;padding:5px 12px;font-size:0.72rem;cursor:pointer;white-space:nowrap">見る</button>
-      <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.95rem;cursor:pointer;padding:2px 4px;line-height:1">×</button>`;
+      <button onclick="goTo('reveal');this.parentElement.remove()" style="background:rgba(37,99,235,0.35);color:#fff;font-weight:700;border:none;border-radius:20px;padding:5px 12px;font-size:0.72rem;cursor:pointer;white-space:nowrap">見る</button>
+      <button onclick="this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.95rem;cursor:pointer;padding:2px 4px;line-height:1">×</button>`;
     document.body.appendChild(toast);
   }
 
