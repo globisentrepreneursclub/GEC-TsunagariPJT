@@ -354,16 +354,22 @@ function updateSharePortrait() {
   }
 }
 
+function buildPortraitPrompt(main) {
+  return [
+    'fantasy RPG character portrait illustration,',
+    `${main.name} (${main.entrepreneurType}),`,
+    `theme: ${main.catchcopy},`,
+    `key traits: ${main.strengths.join(', ')},`,
+    `color palette based on ${main.themeColor},`,
+    'digital art, high quality game character art, no text, no watermark, no logo'
+  ].join(' ');
+}
+
 async function generateCharacterImage() {
   const r = S.result; if (!r) return;
   const main   = CHARACTERS[r.mainCharacter];
   const btn    = document.getElementById('detail-portrait-btn');
   const status = document.getElementById('detail-portrait-status');
-
-  if (!supabaseClient) {
-    status.textContent = '⚠️ Supabase未設定のため画像生成を利用できません';
-    return;
-  }
 
   const originalLabel = btn.textContent;
   btn.disabled = true;
@@ -371,26 +377,21 @@ async function generateCharacterImage() {
   status.textContent = '';
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-character-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({
-        characterName: main.name,
-        entrepreneurType: main.entrepreneurType,
-        catchcopy: main.catchcopy,
-        themeColor: main.themeColor,
-        strengths: main.strengths
-      })
+    const prompt = buildPortraitPrompt(main);
+    const seed = Math.floor(Math.random() * 1000000);
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
-    const data = await res.json();
-    if (!res.ok || !data.image) {
-      throw new Error(data.error || `HTTP ${res.status}`);
-    }
-    S.characterImage = `data:${data.mimeType};base64,${data.image}`;
+
+    S.characterImage = dataUrl;
     saveState();
     renderPortraitState();
   } catch (e) {
