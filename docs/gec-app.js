@@ -483,16 +483,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loadState() && S.result) {
     const main  = CHARACTERS[S.result.mainCharacter];
     const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(6,9,26,0.97);border:1px solid rgba(96,165,250,0.35);border-radius:16px;padding:16px 20px;text-align:center;max-width:310px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.6);';
+    toast.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(6,9,26,0.92);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 10px 6px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:92vw;transition:opacity 0.4s ease;';
     toast.innerHTML = `
-      <div style="font-size:2rem;margin-bottom:6px">${main ? main.emoji : '⚔️'}</div>
-      <p style="color:rgba(96,165,250,0.9);font-size:0.84rem;font-weight:700;margin-bottom:3px">前回の診断：${main ? main.name : ''}タイプ</p>
-      <p style="color:rgba(255,255,255,0.35);font-size:0.75rem;margin-bottom:10px">保存された結果が見つかりました</p>
-      <div style="display:flex;gap:8px">
-        <button onclick="goTo('reveal');this.closest('[style]').remove()" style="flex:1;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-weight:700;border:none;border-radius:20px;padding:8px;font-size:0.8rem;cursor:pointer">結果を見る</button>
-        <button onclick="this.closest('[style]').remove()" style="flex:1;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:8px;font-size:0.8rem;cursor:pointer">閉じる</button>
-      </div>`;
+      <span style="font-size:0.78rem;color:rgba(255,255,255,0.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">前回の診断：${main ? main.name : ''}タイプ</span>
+      <button onclick="goTo('reveal');this.closest('[style]').remove()" style="background:rgba(37,99,235,0.35);color:#fff;font-weight:700;border:none;border-radius:20px;padding:5px 12px;font-size:0.72rem;cursor:pointer;white-space:nowrap">見る</button>
+      <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.95rem;cursor:pointer;padding:2px 4px;line-height:1">×</button>`;
     document.body.appendChild(toast);
+    setTimeout(() => {
+      if (!toast.isConnected) return;
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 400);
+    }, 5000);
   }
 
   const nicknameInput = document.getElementById('nickname-input');
