@@ -354,15 +354,22 @@ function updateSharePortrait() {
   }
 }
 
+// キャラごとに作り込んだ英語プロンプト（日本語や16進カラーコードを直接混ぜると
+// モデルが混乱して破綻した絵になるため、character.id単位で手書きしている）
+const PORTRAIT_PROMPTS = {
+  hero: 'a valiant fantasy RPG hero in ornate gold-and-orange armor, holding a glowing sword aloft, radiating charisma and bold leadership, warm sunrise lighting, heroic pose',
+  warrior: 'a battle-hardened fantasy RPG warrior in rugged crimson steel armor with a large shield, mid-charge stance, fierce determined expression, dramatic red lighting',
+  monk: 'a serene fantasy RPG monk healer in flowing emerald-and-white robes, hands glowing with gentle healing light, calm compassionate expression, soft green lighting',
+  mage: 'a mysterious fantasy RPG mage in a deep purple hooded robe, conjuring swirling violet arcane energy with glowing runes, dramatic purple lighting',
+  thief: 'a cunning fantasy RPG rogue in dark navy leather armor with twin daggers, crouched in shadow, sharp watchful eyes, moody blue-black lighting',
+  merchant: 'a shrewd fantasy RPG merchant in fine amber-and-gold robes, holding a ledger and coin pouch, confident friendly smile, warm golden lighting',
+  strategist: 'a calm fantasy RPG strategist in blue robes, studying a glowing holographic map, sharp intelligent gaze, cool blue lighting',
+  summoner: 'a mystical fantasy RPG summoner in teal-and-cyan robes, surrounded by softly glowing spirit orbs, warm welcoming expression, ethereal teal lighting'
+};
+
 function buildPortraitPrompt(main) {
-  return [
-    'fantasy RPG character portrait illustration,',
-    `${main.name} (${main.entrepreneurType}),`,
-    `theme: ${main.catchcopy},`,
-    `key traits: ${main.strengths.join(', ')},`,
-    `color palette based on ${main.themeColor},`,
-    'digital art, high quality game character art, no text, no watermark, no logo'
-  ].join(' ');
+  const base = PORTRAIT_PROMPTS[main.id] || `a fantasy RPG character embodying ${main.entrepreneurType}`;
+  return `${base}, bust-up portrait, detailed fantasy game concept art, digital painting, highly detailed, no text, no watermark, no logo, no signature`;
 }
 
 async function generateCharacterImage() {
