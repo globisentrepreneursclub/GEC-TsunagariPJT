@@ -332,6 +332,11 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <p style="font-size:0.82rem;color:rgba(255,255,255,0.45)" id="detail-type">ビジョン牽引型</p>
 <p style="font-size:0.88rem;color:rgba(255,255,255,0.7);margin-top:6px;font-style:italic" id="detail-copy">未来を掲げ、仲間を導く冒険の旗手</p>
 </div>
+<div class="gec-card" style="padding:16px;margin-bottom:16px;text-align:center">
+<img id="detail-portrait-img" class="hidden" style="width:100%;max-width:280px;border-radius:12px;margin:0 auto 10px;display:block" alt="AI生成ポートレート">
+<div id="detail-portrait-status" style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:10px"></div>
+<button id="detail-portrait-btn" class="btn-secondary" style="font-size:0.85rem" onclick="generateCharacterImage()">🎨 AIポートレートを生成</button>
+</div>
 <div class="gec-card-blue" style="padding:12px;margin-bottom:16px;text-align:center">
 <span style="font-size:0.82rem;color:#93c5fd"><span id="detail-nickname">???</span>さんの診断結果</span>
 </div>
@@ -409,6 +414,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <span style="font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.12em;color:#60a5fa">FOUNDER QUEST</span>
 </div>
 <div style="text-align:center;margin-bottom:16px">
+<img id="share-portrait-img" class="hidden" style="width:100px;height:100px;object-fit:cover;border-radius:12px;margin:0 auto 6px;display:block" alt="AI生成ポートレート">
 <div style="font-size:3rem;margin-bottom:6px" id="share-emoji">⚔️</div>
 <div style="font-size:1.6rem;font-weight:900;margin-bottom:4px" id="share-char-name">勇者</div>
 <div style="font-size:0.75rem;color:rgba(255,255,255,0.5)" id="share-char-type">ビジョン牽引型</div>

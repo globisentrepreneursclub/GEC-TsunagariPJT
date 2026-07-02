@@ -40,7 +40,7 @@ async function saveResultToSupabase(result) {
 // ===== 状態管理 =====
 let S = {
   nickname: '', stage: null, interests: [],
-  currentQ: 0, answers: [], result: null
+  currentQ: 0, answers: [], result: null, characterImage: null
 };
 
 function saveState() {
@@ -252,6 +252,7 @@ function startAnalyzing() {
   const valid  = S.answers.filter(a => a !== null);
   const result = runDiagnosis(valid);
   S.result = result;
+  S.characterImage = null;
   saveResultToSupabase(result);
 
   setTimeout(() => {
@@ -317,6 +318,88 @@ function renderDetail() {
     const c = Object.values(CHARACTERS).find(x => x.name === name);
     return c ? `<div class="gec-card" style="padding:12px;text-align:center;flex:1"><div style="font-size:1.8rem;margin-bottom:4px">${c.emoji}</div><div style="font-size:0.8rem;font-weight:700">${c.name}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.45)">${c.entrepreneurType}</div></div>` : '';
   }).join('');
+
+  renderPortraitState();
+}
+
+// ===== AIポートレート生成 =====
+function renderPortraitState() {
+  const img    = document.getElementById('detail-portrait-img');
+  const btn    = document.getElementById('detail-portrait-btn');
+  const status = document.getElementById('detail-portrait-status');
+  if (!img || !btn) return;
+  status.textContent = '';
+  if (S.characterImage) {
+    img.src = S.characterImage;
+    img.classList.remove('hidden');
+    btn.textContent = '🔄 再生成';
+  } else {
+    img.classList.add('hidden');
+    btn.textContent = '🎨 AIポートレートを生成';
+  }
+  updateSharePortrait();
+}
+
+function updateSharePortrait() {
+  const img   = document.getElementById('share-portrait-img');
+  const emoji = document.getElementById('share-emoji');
+  if (!img || !emoji) return;
+  if (S.characterImage) {
+    img.src = S.characterImage;
+    img.classList.remove('hidden');
+    emoji.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    emoji.classList.remove('hidden');
+  }
+}
+
+async function generateCharacterImage() {
+  const r = S.result; if (!r) return;
+  const main   = CHARACTERS[r.mainCharacter];
+  const btn    = document.getElementById('detail-portrait-btn');
+  const status = document.getElementById('detail-portrait-status');
+
+  if (!supabaseClient) {
+    status.textContent = '⚠️ Supabase未設定のため画像生成を利用できません';
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中…（数秒〜十数秒かかります）';
+  status.textContent = '';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-character-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        characterName: main.name,
+        entrepreneurType: main.entrepreneurType,
+        catchcopy: main.catchcopy,
+        themeColor: main.themeColor,
+        strengths: main.strengths
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.image) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+    S.characterImage = `data:${data.mimeType};base64,${data.image}`;
+    saveState();
+    renderPortraitState();
+  } catch (e) {
+    console.error('generateCharacterImage failed:', e);
+    status.textContent = '⚠️ 画像生成に失敗しました。もう一度お試しください。';
+    btn.textContent = originalLabel;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ===== クエスト =====
@@ -350,6 +433,7 @@ function renderShare() {
   document.getElementById('share-char-type').textContent = main.entrepreneurType;
   document.getElementById('share-char-copy').textContent = main.catchcopy;
   document.getElementById('share-nickname').textContent  = S.nickname;
+  updateSharePortrait();
 
   const card = document.getElementById('share-card');
   card.style.background = `linear-gradient(135deg,#06091a 0%,${main.themeColor}22 55%,#0a1e3d 100%)`;
@@ -468,7 +552,7 @@ function showCharMessage() {
 // ===== リセット =====
 function resetAndStart() {
   if (!confirm('診断結果がリセットされます。もう一度診断しますか？')) return;
-  S = { nickname:'', stage:null, interests:[], currentQ:0, answers:[], result:null };
+  S = { nickname:'', stage:null, interests:[], currentQ:0, answers:[], result:null, characterImage:null };
   localStorage.removeItem('fq_state');
   document.getElementById('nickname-input').value = '';
   document.querySelectorAll('#stage-options button').forEach(b => b.classList.remove('selected'));
