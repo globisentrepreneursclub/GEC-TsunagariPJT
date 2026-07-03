@@ -40,9 +40,16 @@ async function saveResultToSupabase(result) {
 }
 
 // マイページ用のアバター画像だけをSupabaseに同期する（他の項目は更新不可のRLS設定）
+// profileIdが未確定（初回insertが未完了/失敗）の場合は、この場で行の作成を試みてから同期する
 async function syncCharacterImageToSupabase() {
-  if (!supabaseClient || !S.profileId || !S.characterImage) return;
+  if (!supabaseClient || !S.characterImage || !S.result) return;
   try {
+    if (!S.profileId) {
+      const id = await saveResultToSupabase(S.result);
+      if (!id) return;
+      S.profileId = id;
+      saveState();
+    }
     const { error } = await supabaseClient
       .from('diagnosis_results')
       .update({ character_image: S.characterImage })
