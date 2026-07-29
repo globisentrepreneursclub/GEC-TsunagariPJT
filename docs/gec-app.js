@@ -22,6 +22,7 @@ async function saveResultToSupabase(result) {
 
     const { data, error } = await supabaseClient.from('diagnosis_results').insert({
       device_id: getDeviceId(),
+      user_id: currentUser ? currentUser.id : null,
       nickname: S.nickname,
       stage: S.stage,
       interests: S.interests,
@@ -37,6 +38,69 @@ async function saveResultToSupabase(result) {
     console.error('Supabase fail:', e);
     return null;
   }
+}
+
+// ===== ログイン（Google OAuth） =====
+let currentUser = null;
+
+async function loginWithGoogle() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+}
+
+async function logout() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+}
+
+// 同じ端末(device_id)に紐づく、まだ誰にも紐付いていない過去の匿名診断を
+// ログインしたアカウントに引き取らせる
+async function claimAnonymousHistory() {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { error } = await supabaseClient
+      .from('diagnosis_results')
+      .update({ user_id: currentUser.id })
+      .eq('device_id', getDeviceId())
+      .is('user_id', null);
+    if (error) console.error('claimAnonymousHistory error:', error);
+  } catch (e) {
+    console.error('claimAnonymousHistory failed:', e);
+  }
+}
+
+function renderAuthUI() {
+  document.querySelectorAll('[data-auth-slot]').forEach(slot => {
+    if (currentUser) {
+      const name = currentUser.user_metadata?.full_name || currentUser.email || 'ログイン中';
+      const avatar = currentUser.user_metadata?.avatar_url;
+      slot.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:rgba(255,255,255,0.6)">
+          ${avatar ? `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%">` : ''}
+          <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+          <button onclick="logout()" style="background:none;border:none;color:#60a5fa;font-size:0.72rem;cursor:pointer;text-decoration:underline;padding:0">ログアウト</button>
+        </div>`;
+    } else {
+      slot.innerHTML = `<button onclick="loginWithGoogle()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(96,165,250,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:5px 12px;font-size:0.72rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif">Googleでログイン</button>`;
+    }
+  });
+}
+
+async function initAuth() {
+  if (!supabaseClient) return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  currentUser = session ? session.user : null;
+  renderAuthUI();
+  if (currentUser) claimAnonymousHistory();
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    currentUser = session ? session.user : null;
+    renderAuthUI();
+    if (event === 'SIGNED_IN') claimAnonymousHistory();
+  });
 }
 
 // マイページ用のアバター画像だけをSupabaseに同期する（他の項目は更新不可のRLS設定）
@@ -694,6 +758,7 @@ function resetAndStart() {
 // ===== 起動 =====
 document.addEventListener('DOMContentLoaded', () => {
   createParticles();
+  initAuth();
 
   if (loadState() && S.result) {
     const main  = CHARACTERS[S.result.mainCharacter];
