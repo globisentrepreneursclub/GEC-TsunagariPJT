@@ -361,15 +361,16 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#60a5fa;margin-bottom:12px">相性の良い仲間</div>
 <div id="detail-compat" style="display:flex;gap:10px"></div>
 </div>
+<button class="btn-secondary" style="width:100%;margin-bottom:10px;font-size:0.88rem" onclick="goTo('reveal')">← キャラに戻る</button>
 <div style="display:flex;gap:10px">
-<button class="btn-secondary" style="flex:1;font-size:0.88rem" onclick="goTo('reveal')">← キャラ</button>
-<button class="btn-primary" style="flex:2" onclick="goTo('quest')">初回クエスト →</button>
+<button class="btn-primary" style="flex:1" onclick="goTo('share')">結果を共有 →</button>
+<button class="btn-primary" style="flex:1" onclick="goTo('room')">マイルームへ →</button>
 </div>
 </div>
 </div>
 
 <!-- ========================================================
-     SCREEN 8: クエスト
+     SCREEN 8: クエスト（マイルームから任意でアクセス）
 ======================================================== -->
 <div id="screen-quest" class="screen">
 <div style="max-width:440px;margin:0 auto;padding:32px 20px 60px">
@@ -397,7 +398,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div id="quest-hints" style="display:flex;flex-direction:column;gap:8px;font-size:0.88rem;color:rgba(255,255,255,0.65)"></div>
 </div>
 <div style="display:flex;gap:10px">
-<button class="btn-secondary" style="flex:1;font-size:0.88rem" onclick="goTo('detail')">← 詳細</button>
+<button class="btn-secondary" style="flex:1;font-size:0.88rem" onclick="goTo('room')">← マイルーム</button>
 <button class="btn-primary" style="flex:2" onclick="goTo('share')">結果を共有 →</button>
 </div>
 </div>
