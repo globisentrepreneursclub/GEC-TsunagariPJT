@@ -94,7 +94,7 @@ const CHARACTERS = {
   },
   thief: {
     id: "thief",
-    name: "盗賊",
+    name: "トレジャーハンター",
     emoji: "🗡️",
     entrepreneurType: "機会発見型",
     catchcopy: "変化の隙間を見抜き、チャンスを素早くつかむ探索者",
@@ -147,7 +147,7 @@ const CHARACTERS = {
     description: "データと論理で状況を分析し、勝てる戦略を描いて組織を動かす。",
     strengths: ["分析力と戦略設計", "優先順位づけ", "意思決定支援力"],
     weaknesses: ["実行が遅れること", "冷たく見られること", "完璧主義になりすぎること"],
-    compatibleCharacters: ["戦士", "勇者", "盗賊"],
+    compatibleCharacters: ["戦士", "勇者", "トレジャーハンター"],
     compatibleEmojis: ["🛡️", "⚔️", "🗡️"],
     firstQuest: "市場・競合・顧客課題をそれぞれ3つずつ書き出しましょう",
     roomMessage: "勝ち筋は、情報の整理から見えてくる。",

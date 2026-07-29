@@ -387,7 +387,7 @@ const PORTRAIT_PROMPTS = {
   warrior: 'a battle-hardened fantasy RPG warrior in rugged crimson steel armor with a large shield, mid-charge stance, fierce determined expression, dramatic red lighting',
   monk: 'a serene fantasy RPG monk healer in flowing emerald-and-white robes, hands glowing with gentle healing light, calm compassionate expression, soft green lighting',
   mage: 'a mysterious fantasy RPG mage in a deep purple hooded robe, conjuring swirling violet arcane energy with glowing runes, dramatic purple lighting',
-  thief: 'a cunning fantasy RPG rogue in dark navy leather armor with twin daggers, crouched in shadow, sharp watchful eyes, moody blue-black lighting',
+  thief: 'a bold fantasy RPG treasure hunter in dark navy adventuring gear with a map and compass, standing at the entrance of an ancient ruin, sharp curious eyes, moody blue-black lighting',
   merchant: 'a shrewd fantasy RPG merchant in fine amber-and-gold robes, holding a ledger and coin pouch, confident friendly smile, warm golden lighting',
   strategist: 'a calm fantasy RPG strategist in blue robes, studying a glowing holographic map, sharp intelligent gaze, cool blue lighting',
   summoner: 'a mystical fantasy RPG summoner in teal-and-cyan robes, surrounded by softly glowing spirit orbs, warm welcoming expression, ethereal teal lighting'

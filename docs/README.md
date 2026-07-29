@@ -63,7 +63,7 @@ README.md
 | 戦士 | 実行突破型 | ACTION×1.5 + PERSIST×1.0 + RISK×0.8 |
 | 僧侶 | 共感支援型 | EMPATHY×1.5 + PERSIST×1.0 + TEAM×0.8 |
 | 魔法使い | 創造発明型 | CREATIVE×1.5 + VISION×1.0 + ANALYSIS×0.8 |
-| 盗賊 | 機会発見型 | RISK×1.5 + CREATIVE×1.0 + ACTION×0.8 |
+| トレジャーハンター | 機会発見型 | RISK×1.5 + CREATIVE×1.0 + ACTION×0.8 |
 | 商人 | 事業設計型 | ANALYSIS×1.5 + EMPATHY×1.0 + PERSIST×0.8 |
 | 軍師 | 戦略分析型 | ANALYSIS×1.5 + VISION×1.0 + TEAM×0.8 |
 | 召喚士 | チーム形成型 | TEAM×1.5 + EMPATHY×1.0 + VISION×0.8 |
