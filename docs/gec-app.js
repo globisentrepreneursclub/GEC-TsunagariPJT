@@ -72,15 +72,41 @@ async function claimAnonymousHistory() {
   }
 }
 
+// ログイン中のアカウントに紐づく診断を探し、profileIdが未確定でも
+// 「マイページへ」を出せるようにする（トップ画面など診断フロー外からの導線用）
+let myProfileId = null;
+async function resolveMyProfileId() {
+  if (!supabaseClient || !currentUser) { myProfileId = null; return; }
+  try {
+    const { data, error } = await supabaseClient
+      .from('diagnosis_results')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) { console.error('resolveMyProfileId error:', error); return; }
+    myProfileId = data ? data.id : null;
+    if (myProfileId && !S.profileId) S.profileId = myProfileId;
+    renderAuthUI();
+  } catch (e) {
+    console.error('resolveMyProfileId failed:', e);
+  }
+}
+
 function renderAuthUI() {
   document.querySelectorAll('[data-auth-slot]').forEach(slot => {
     if (currentUser) {
       const name = currentUser.user_metadata?.full_name || currentUser.email || 'ログイン中';
       const avatar = currentUser.user_metadata?.avatar_url;
+      const mypageLink = myProfileId
+        ? `<a href="profile.html?id=${encodeURIComponent(myProfileId)}" target="_blank" style="color:#60a5fa;font-size:0.72rem;text-decoration:underline">マイページ</a>`
+        : '';
       slot.innerHTML = `
         <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:rgba(255,255,255,0.6)">
           ${avatar ? `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%">` : ''}
           <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+          ${mypageLink}
           <button onclick="logout()" style="background:none;border:none;color:#60a5fa;font-size:0.72rem;cursor:pointer;text-decoration:underline;padding:0">ログアウト</button>
         </div>`;
     } else {
@@ -94,12 +120,13 @@ async function initAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentUser = session ? session.user : null;
   renderAuthUI();
-  if (currentUser) claimAnonymousHistory();
+  if (currentUser) { await claimAnonymousHistory(); await resolveMyProfileId(); }
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session ? session.user : null;
     renderAuthUI();
-    if (event === 'SIGNED_IN') claimAnonymousHistory();
+    if (event === 'SIGNED_IN') { await claimAnonymousHistory(); await resolveMyProfileId(); }
+    if (event === 'SIGNED_OUT') { myProfileId = null; renderAuthUI(); }
   });
 }
 
