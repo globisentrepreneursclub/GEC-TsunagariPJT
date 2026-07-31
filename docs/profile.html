@@ -33,6 +33,9 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
   <div id="status" style="text-align:center;color:rgba(255,255,255,0.5);font-size:0.9rem;padding:40px 0"></div>
 
   <div id="profile-body" class="hidden">
+    <div id="owner-badge" class="hidden" style="text-align:center;margin-bottom:14px">
+      <span class="sec-chip">⭐ あなたのマイページです</span>
+    </div>
     <div style="text-align:center;margin-bottom:20px">
       <img id="profile-avatar-img" class="hidden" style="width:140px;height:140px;object-fit:cover;border-radius:16px;margin:0 auto 10px;display:block" alt="ポートレート">
       <div id="profile-avatar-emoji" style="font-size:4.5rem;margin-bottom:6px"></div>
@@ -48,7 +51,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
     </div>
 
     <div style="text-align:center">
-      <a class="btn-primary" href="index.html">⚔️ 自分も診断してみる</a>
+      <a id="cta-btn" class="btn-primary" href="index.html">⚔️ 自分も診断してみる</a>
     </div>
   </div>
 
@@ -88,6 +91,18 @@ async function loadProfile() {
     if (error || !data) {
       statusEl.textContent = 'このマイページは見つかりませんでした。';
       return;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    const isOwner = !!(session && session.user && session.user.id === data.user_id);
+    document.getElementById('owner-badge').classList.toggle('hidden', !isOwner);
+    const cta = document.getElementById('cta-btn');
+    if (isOwner) {
+      cta.textContent = '🔄 もう一度診断する';
+      cta.href = 'index.html';
+    } else {
+      cta.textContent = '⚔️ 自分も診断してみる';
+      cta.href = 'index.html';
     }
 
     document.getElementById('profile-nickname').textContent = data.nickname || '???';
