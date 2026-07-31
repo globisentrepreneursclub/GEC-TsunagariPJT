@@ -96,13 +96,55 @@ async function resolveMyProfileId() {
   }
 }
 
+// ログイン中アカウントの最新診断を、この端末のローカル状態(S)に持っていない場合に
+// Supabaseから取得して補う（別端末からログインしてマイルームを開くケース用）。
+async function loadMyResultFromServer() {
+  if (!supabaseClient || !myProfileId) return false;
+  try {
+    const { data, error } = await supabaseClient
+      .from('public_profiles')
+      .select('nickname, parameter_scores, main_character, sub_character, is_hybrid, character_image')
+      .eq('id', myProfileId)
+      .single();
+    if (error || !data) { console.error('loadMyResultFromServer error:', error); return false; }
+    S.nickname = data.nickname || S.nickname;
+    S.result = {
+      parameterScores: data.parameter_scores,
+      mainCharacter: data.main_character,
+      subCharacter: data.sub_character,
+      isHybrid: data.is_hybrid
+    };
+    S.characterImage = data.character_image || null;
+    S.profileId = myProfileId;
+    saveState();
+    return true;
+  } catch (e) {
+    console.error('loadMyResultFromServer failed:', e);
+    return false;
+  }
+}
+
+// トップ画面などのアカウント情報からマイルームへ直接遷移する導線。
+// この端末に診断データが無い場合はサーバーから読み込んでから遷移する。
+async function goToMyRoom() {
+  if (!currentUser) return;
+  if (!S.result) {
+    const ok = await loadMyResultFromServer();
+    if (!ok) {
+      alert('マイルームのデータを読み込めませんでした。少し待ってからもう一度お試しください。');
+      return;
+    }
+  }
+  goTo('room');
+}
+
 function renderAuthUI() {
   document.querySelectorAll('[data-auth-slot]').forEach(slot => {
     if (currentUser) {
       const name = currentUser.user_metadata?.full_name || currentUser.email || 'ログイン中';
       const avatar = currentUser.user_metadata?.avatar_url;
       const mypageLink = myProfileId
-        ? `<a href="profile.html?id=${encodeURIComponent(myProfileId)}" target="_blank" style="color:#60a5fa;font-size:0.72rem;text-decoration:underline">マイページ</a>`
+        ? `<button onclick="goToMyRoom()" style="background:none;border:none;color:#60a5fa;font-size:0.72rem;cursor:pointer;text-decoration:underline;padding:0;font-family:'Noto Sans JP',sans-serif">マイルーム</button>`
         : '';
       slot.innerHTML = `
         <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:rgba(255,255,255,0.6)">
@@ -791,7 +833,13 @@ function resetAndStart() {
 document.addEventListener('DOMContentLoaded', () => {
   window.FQ_DEBUG = new URLSearchParams(location.search).get('debug') === '1';
   createParticles();
-  initAuth();
+
+  if (new URLSearchParams(location.search).get('openRoom') === '1') {
+    history.replaceState(null, '', location.pathname);
+    initAuth().then(() => goToMyRoom());
+  } else {
+    initAuth();
+  }
 
   if (loadState() && S.result) {
     const main  = CHARACTERS[S.result.mainCharacter];

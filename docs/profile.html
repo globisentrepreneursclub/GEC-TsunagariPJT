@@ -98,8 +98,8 @@ async function loadProfile() {
     document.getElementById('owner-badge').classList.toggle('hidden', !isOwner);
     const cta = document.getElementById('cta-btn');
     if (isOwner) {
-      cta.textContent = '🔄 もう一度診断する';
-      cta.href = 'index.html';
+      cta.textContent = '🏠 マイルームへ';
+      cta.href = 'index.html?openRoom=1';
     } else {
       cta.textContent = '⚔️ 自分も診断してみる';
       cta.href = 'index.html';
