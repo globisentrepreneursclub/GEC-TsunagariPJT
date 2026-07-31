@@ -57,24 +57,21 @@ async function logout() {
 }
 
 // 同じ端末(device_id)に紐づく、まだ誰にも紐付いていない過去の匿名診断を
-// ログインしたアカウントに引き取らせる
+// ログインしたアカウントに引き取らせる。
+// 直接UPDATE+RLSポリシー方式は環境依存の理由で信頼できなかったため、
+// SECURITY DEFINER のRPC(claim_anonymous_diagnosis)経由にしている。
 async function claimAnonymousHistory() {
   if (!supabaseClient || !currentUser) return;
   const deviceId = getDeviceId();
   try {
-    const { data, error } = await supabaseClient
-      .from('diagnosis_results')
-      .update({ user_id: currentUser.id })
-      .eq('device_id', deviceId)
-      .is('user_id', null)
-      .select('id');
+    const { data, error } = await supabaseClient.rpc('claim_anonymous_diagnosis', { p_device_id: deviceId });
     if (error) {
       console.error('claimAnonymousHistory error:', error, { deviceId, userId: currentUser.id });
       if (window.FQ_DEBUG) alert('claim error: ' + error.message + '\ndeviceId: ' + deviceId);
       return;
     }
-    console.log(`claimAnonymousHistory: ${data.length}件を紐付け`, { deviceId, userId: currentUser.id, claimed: data });
-    if (window.FQ_DEBUG) alert(`claim結果: ${data.length}件\ndeviceId: ${deviceId}\nuserId: ${currentUser.id}`);
+    console.log(`claimAnonymousHistory: ${data}件を紐付け`, { deviceId, userId: currentUser.id });
+    if (window.FQ_DEBUG) alert(`claim結果: ${data}件\ndeviceId: ${deviceId}\nuserId: ${currentUser.id}`);
   } catch (e) {
     console.error('claimAnonymousHistory failed:', e, { deviceId });
   }
@@ -82,19 +79,14 @@ async function claimAnonymousHistory() {
 
 // ログイン中のアカウントに紐づく診断を探し、profileIdが未確定でも
 // 「マイページへ」を出せるようにする（トップ画面など診断フロー外からの導線用）
+// こちらも同じ理由でRPC(get_my_latest_profile_id)経由にしている。
 let myProfileId = null;
 async function resolveMyProfileId() {
   if (!supabaseClient || !currentUser) { myProfileId = null; return; }
   try {
-    const { data, error } = await supabaseClient
-      .from('diagnosis_results')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data, error } = await supabaseClient.rpc('get_my_latest_profile_id');
     if (error) { console.error('resolveMyProfileId error:', error); return; }
-    myProfileId = data ? data.id : null;
+    myProfileId = data || null;
     if (myProfileId && !S.profileId) S.profileId = myProfileId;
     renderAuthUI();
   } catch (e) {
