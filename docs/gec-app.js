@@ -86,8 +86,10 @@ async function resolveMyProfileId() {
   try {
     const { data, error } = await supabaseClient.rpc('get_my_latest_profile_id');
     if (error) { console.error('resolveMyProfileId error:', error); return; }
+    // S.profileIdは「今この端末のセッションで進行中の診断」を指すための変数であり、
+    // ここで上書きするとアカウントより端末側の状態が優先されてしまうため触らない。
+    // マイページのリンク先は常にmyProfileId（アカウント基準）を使う。
     myProfileId = data || null;
-    if (myProfileId && !S.profileId) S.profileId = myProfileId;
     renderAuthUI();
   } catch (e) {
     console.error('resolveMyProfileId failed:', e);
@@ -755,11 +757,14 @@ function renderRoom() {
 }
 
 function openMyPage() {
-  if (!S.profileId) {
+  // ログイン中はアカウント基準(myProfileId)を優先し、未ログイン時のみ
+  // この端末で今取った診断(S.profileId)への「インスタントURL」にフォールバックする。
+  const id = currentUser ? (myProfileId || S.profileId) : S.profileId;
+  if (!id) {
     alert('マイページの準備中です。少し待ってからもう一度お試しください。');
     return;
   }
-  window.open(`profile.html?id=${encodeURIComponent(S.profileId)}`, '_blank');
+  window.open(`profile.html?id=${encodeURIComponent(id)}`, '_blank');
 }
 
 function showCharMessage() {
