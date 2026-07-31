@@ -31,7 +31,12 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
   <a href="index.html" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.5);font-size:0.82rem;text-decoration:none;margin-bottom:12px">← トップに戻る</a>
   <h1 style="font-size:1.2rem;font-weight:900;text-align:center;margin-bottom:16px">🗺️ メンバー一覧</h1>
 
-  <input id="search" type="text" placeholder="ニックネームで検索..." class="rpg-input" style="margin-bottom:16px" oninput="renderList()">
+  <input id="search" type="text" placeholder="ニックネームで検索..." class="rpg-input" style="margin-bottom:10px" oninput="renderList()">
+
+  <label style="display:flex;align-items:center;gap:6px;margin-bottom:16px;font-size:0.78rem;color:rgba(255,255,255,0.55);cursor:pointer">
+    <input type="checkbox" id="show-anonymous" onchange="renderList()">
+    アカウント未登録（匿名診断）も表示する
+  </label>
 
   <div id="status" style="text-align:center;color:rgba(255,255,255,0.5);font-size:0.9rem;padding:20px 0"></div>
 
@@ -65,7 +70,6 @@ async function loadMembers() {
     const { data, error } = await sb
       .from('public_profiles')
       .select('*')
-      .not('user_id', 'is', null) // ログイン済みアカウントに紐づいた診断のみ一覧に表示（未ログイン分はリンクを知る人だけ閲覧可）
       .order('created_at', { ascending: false })
       .limit(300);
 
@@ -84,7 +88,11 @@ async function loadMembers() {
 
 function renderList() {
   const q = document.getElementById('search').value.trim().toLowerCase();
-  const rows = q ? allMembers.filter(m => (m.nickname || '').toLowerCase().includes(q)) : allMembers;
+  const showAnonymous = document.getElementById('show-anonymous').checked;
+
+  let rows = allMembers;
+  if (!showAnonymous) rows = rows.filter(m => m.user_id);
+  if (q) rows = rows.filter(m => (m.nickname || '').toLowerCase().includes(q));
 
   document.getElementById('grid').innerHTML = rows.map(m => {
     const c = CHARACTER_NAME_MAP[m.main_character] || { name: m.main_character, type: '', emoji: '❓' };
@@ -94,7 +102,7 @@ function renderList() {
     return `<a class="member-card gec-card" style="padding:12px;text-align:center" href="profile.html?id=${encodeURIComponent(m.id)}">
       ${avatar}
       <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.nickname || '???'}</div>
-      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}</div>
     </a>`;
   }).join('');
 
