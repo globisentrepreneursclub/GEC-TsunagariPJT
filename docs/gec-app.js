@@ -70,9 +70,11 @@ async function claimAnonymousHistory() {
       .select('id');
     if (error) {
       console.error('claimAnonymousHistory error:', error, { deviceId, userId: currentUser.id });
+      if (window.FQ_DEBUG) alert('claim error: ' + error.message + '\ndeviceId: ' + deviceId);
       return;
     }
     console.log(`claimAnonymousHistory: ${data.length}件を紐付け`, { deviceId, userId: currentUser.id, claimed: data });
+    if (window.FQ_DEBUG) alert(`claim結果: ${data.length}件\ndeviceId: ${deviceId}\nuserId: ${currentUser.id}`);
   } catch (e) {
     console.error('claimAnonymousHistory failed:', e, { deviceId });
   }
@@ -790,6 +792,7 @@ function resetAndStart() {
 
 // ===== 起動 =====
 document.addEventListener('DOMContentLoaded', () => {
+  window.FQ_DEBUG = new URLSearchParams(location.search).get('debug') === '1';
   createParticles();
   initAuth();
 
