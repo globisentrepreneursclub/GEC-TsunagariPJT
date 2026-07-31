@@ -60,15 +60,21 @@ async function logout() {
 // ログインしたアカウントに引き取らせる
 async function claimAnonymousHistory() {
   if (!supabaseClient || !currentUser) return;
+  const deviceId = getDeviceId();
   try {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('diagnosis_results')
       .update({ user_id: currentUser.id })
-      .eq('device_id', getDeviceId())
-      .is('user_id', null);
-    if (error) console.error('claimAnonymousHistory error:', error);
+      .eq('device_id', deviceId)
+      .is('user_id', null)
+      .select('id');
+    if (error) {
+      console.error('claimAnonymousHistory error:', error, { deviceId, userId: currentUser.id });
+      return;
+    }
+    console.log(`claimAnonymousHistory: ${data.length}件を紐付け`, { deviceId, userId: currentUser.id, claimed: data });
   } catch (e) {
-    console.error('claimAnonymousHistory failed:', e);
+    console.error('claimAnonymousHistory failed:', e, { deviceId });
   }
 }
 
