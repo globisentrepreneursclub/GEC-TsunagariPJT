@@ -935,9 +935,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadMyResultFromServer();
   }
 
-  if (openRoom) await goToMyRoom();
+  if (openRoom) {
+    // ローカルにすでに結果があればそのままマイルームへ（未ログインでも可）。
+    // ローカルに無く、ログイン中ならアカウントのデータを取得してから遷移する。
+    if (S.result) {
+      goTo('room');
+    } else if (currentUser) {
+      await goToMyRoom();
+    }
+  }
 
-  if (S.result) {
+  if (S.result && !openRoom) {
     const main  = CHARACTERS[S.result.mainCharacter];
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(6,9,26,0.92);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 10px 6px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:92vw;transition:opacity 0.4s ease;';
