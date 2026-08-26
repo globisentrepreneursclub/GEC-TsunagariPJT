@@ -819,8 +819,8 @@ function openMyPage() {
   window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
 }
 
-// ===== マイルームからの現状（フェーズ・関心テーマ・スキル・目標）更新 =====
-let roomStatusState = { stage: null, interests: [], skills: '', goal: '' };
+// ===== マイルームからの現状（フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
+let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '' };
 
 async function toggleStatusEditor() {
   if (!currentUser) { alert('ログインすると現状を更新できます。'); return; }
@@ -840,11 +840,13 @@ async function toggleStatusEditor() {
     const interests = (row && row.interests) ? row.interests : [];
     const skills = (row && row.skills) || '';
     const goal = (row && row.goal) || '';
-    roomStatusState = { stage, interests: interests.slice(), skills, goal };
+    const bio = (row && row.bio) || '';
+    roomStatusState = { stage, interests: interests.slice(), skills, goal, bio };
     document.querySelectorAll('#room-stage-options button').forEach(b => b.classList.toggle('selected', b.dataset.value === stage));
     document.querySelectorAll('#room-interest-chips button').forEach(b => b.classList.toggle('selected', interests.includes(b.dataset.value)));
     document.getElementById('room-skills-input').value = skills;
     document.getElementById('room-goal-input').value = goal;
+    document.getElementById('room-bio-input').value = bio;
     msg.textContent = '';
   } catch (e) {
     console.error('toggleStatusEditor failed:', e);
@@ -876,12 +878,14 @@ async function saveStatusUpdate() {
   msg.textContent = '保存中...';
   const skills = document.getElementById('room-skills-input').value.trim();
   const goal = document.getElementById('room-goal-input').value.trim();
+  const bio = document.getElementById('room-bio-input').value.trim();
   try {
     const { error } = await supabaseClient.rpc('update_my_status', {
       p_stage: roomStatusState.stage,
       p_interests: roomStatusState.interests,
       p_skills: skills || null,
-      p_goal: goal || null
+      p_goal: goal || null,
+      p_bio: bio || null
     });
     if (error) { console.error('update_my_status error:', error); msg.style.color = '#f87171'; msg.textContent = '⚠️ 保存に失敗しました'; return; }
     S.stage = roomStatusState.stage;

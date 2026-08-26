@@ -53,6 +53,23 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
       <div id="profile-status" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
 
+    <div id="profile-current-card" class="gec-card hidden" style="padding:20px;margin-bottom:20px">
+      <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#60a5fa;margin-bottom:14px">現状</div>
+      <div id="profile-stage-row" class="hidden" style="margin-bottom:12px"><span class="sec-chip">📍 <span id="profile-stage-text"></span></span></div>
+      <div id="profile-skills-row" class="hidden" style="margin-bottom:12px">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:4px">🛠️ スキル・強み</div>
+        <div style="font-size:0.85rem;line-height:1.6" id="profile-skills-text"></div>
+      </div>
+      <div id="profile-goal-row" class="hidden" style="margin-bottom:12px">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:4px">🎯 目標</div>
+        <div style="font-size:0.85rem;line-height:1.6" id="profile-goal-text"></div>
+      </div>
+      <div id="profile-bio-row" class="hidden">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:4px">📝 詳細プロフィール</div>
+        <div style="font-size:0.85rem;line-height:1.7;white-space:pre-wrap" id="profile-bio-text"></div>
+      </div>
+    </div>
+
     <div id="profile-sub-card" class="gec-card hidden" style="padding:16px;margin-bottom:20px">
       <p style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px">サブキャラクター</p>
       <div style="display:flex;align-items:center;justify-content:center;gap:12px">
@@ -90,6 +107,10 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script>
 const P_COLORS = { VISION:'#60a5fa', ACTION:'#f87171', EMPATHY:'#34d399', ANALYSIS:'#818cf8', CREATIVE:'#a78bfa', RISK:'#fbbf24', TEAM:'#22d3ee', PERSIST:'#fb923c' };
 const PARAM_LABELS = [['VISION','ビジョン力'],['ACTION','実行力'],['EMPATHY','共感力'],['ANALYSIS','分析力'],['CREATIVE','創造力'],['RISK','挑戦力'],['TEAM','巻き込み力'],['PERSIST','継続力']];
+const STAGE_LABELS = {
+  interested: '興味あり', preparing: '準備中', side: '副業・個人活動',
+  founded: '起業済み', corporate: '新規事業'
+};
 
 function normalizeScore(v) {
   return Math.min(100, Math.round((v / 25) * 100));
@@ -144,6 +165,20 @@ async function loadProfile() {
     document.getElementById('profile-char-type').textContent = main ? main.entrepreneurType : '';
     document.getElementById('profile-avatar-emoji').textContent = main ? main.emoji : '⚔️';
     document.getElementById('profile-hybrid-badge').classList.toggle('hidden', !data.is_hybrid);
+
+    const hasStage  = !!data.stage;
+    const hasSkills = !!data.skills;
+    const hasGoal   = !!data.goal;
+    const hasBio    = !!data.bio;
+    document.getElementById('profile-current-card').classList.toggle('hidden', !(hasStage || hasSkills || hasGoal || hasBio));
+    document.getElementById('profile-stage-row').classList.toggle('hidden', !hasStage);
+    if (hasStage) document.getElementById('profile-stage-text').textContent = STAGE_LABELS[data.stage] || data.stage;
+    document.getElementById('profile-skills-row').classList.toggle('hidden', !hasSkills);
+    if (hasSkills) document.getElementById('profile-skills-text').textContent = data.skills;
+    document.getElementById('profile-goal-row').classList.toggle('hidden', !hasGoal);
+    if (hasGoal) document.getElementById('profile-goal-text').textContent = data.goal;
+    document.getElementById('profile-bio-row').classList.toggle('hidden', !hasBio);
+    if (hasBio) document.getElementById('profile-bio-text').textContent = data.bio;
 
     document.getElementById('profile-sub-card').classList.toggle('hidden', !sub);
     if (sub) {

@@ -336,7 +336,8 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div class="gec-card" style="padding:16px;margin-bottom:16px;text-align:center">
 <img id="detail-portrait-img" class="hidden" style="width:100%;max-width:280px;border-radius:12px;margin:0 auto 10px;display:block" alt="ポートレート">
 <div id="detail-portrait-status" style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:10px"></div>
-<input type="text" id="detail-portrait-hint" class="rpg-input" style="margin-bottom:10px;font-size:0.85rem" placeholder="生成条件（性別・髪型など自由記述・任意）" maxlength="80">
+<input type="text" id="detail-portrait-hint" class="rpg-input" style="margin-bottom:6px;font-size:0.85rem" placeholder="生成条件（任意）例：male, eyeglasses" maxlength="80">
+<p style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin:0 0 10px;text-align:left">※ 英語の簡単な単語で入力してください（例：male, eyeglasses, short hair）</p>
 <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
 <button id="detail-portrait-btn" class="btn-secondary" style="font-size:0.85rem" onclick="generateCharacterImage()">🎨 AIポートレートを生成</button>
 <button class="btn-secondary" style="font-size:0.85rem" onclick="document.getElementById('detail-portrait-upload').click()">📤 画像をアップロード</button>
@@ -487,7 +488,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="goTo('share')"><span style="color:#60a5fa">▸</span><span>結果を共有する</span></button>
 <button id="room-mypage-btn" class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="openMyPage()"><span style="color:#60a5fa">▸</span><span>マイページを見る（公開リンク）</span></button>
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="window.location.href='members.html'"><span style="color:#60a5fa">▸</span><span>メンバー一覧を見る</span></button>
-<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="toggleStatusEditor()"><span style="color:#60a5fa">▸</span><span>現状（フェーズ・関心テーマ）を更新</span></button>
+<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="toggleStatusEditor()"><span style="color:#60a5fa">▸</span><span>現状・詳細プロフィールを更新</span></button>
 </div>
 
 <div id="room-status-editor" class="gec-card hidden" style="padding:18px;margin-bottom:20px">
@@ -516,6 +517,8 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <input type="text" id="room-skills-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem" placeholder="例：Webマーケティング、資金調達の経験など" maxlength="200">
 <label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">目標</label>
 <input type="text" id="room-goal-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem" placeholder="例：半年以内に共同創業者を見つける" maxlength="200">
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">詳細プロフィール</label>
+<textarea id="room-bio-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem;resize:vertical;min-height:90px;font-family:'Noto Sans JP',sans-serif" placeholder="経歴、事業内容、これまでの取り組みなど、自由に記入してください" maxlength="1000"></textarea>
 <button class="btn-primary" style="width:100%" onclick="saveStatusUpdate()">保存する</button>
 <div id="room-status-msg" style="text-align:center;font-size:0.78rem;color:#34d399;margin-top:10px"></div>
 </div>
@@ -532,6 +535,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20260826b"></script>
+<script src="gec-app.js?v=20260827a"></script>
 </body>
 </html>
