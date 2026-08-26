@@ -918,18 +918,26 @@ function resetAndStart() {
 }
 
 // ===== 起動 =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   window.FQ_DEBUG = new URLSearchParams(location.search).get('debug') === '1';
   createParticles();
+  loadState(); // この端末のローカル状態があれば先に読み込んでおく
 
-  if (new URLSearchParams(location.search).get('openRoom') === '1') {
-    history.replaceState(null, '', location.pathname);
-    initAuth().then(() => goToMyRoom());
-  } else {
-    initAuth();
+  const openRoom = new URLSearchParams(location.search).get('openRoom') === '1';
+  if (openRoom) history.replaceState(null, '', location.pathname);
+
+  await initAuth();
+
+  // ログイン中は「アカウントの最新診断」が正。この端末のローカル状態が
+  // 別の診断（他端末で取った分と食い違う、または端末側だけ別の匿名診断が残っている）
+  // を指している場合は矛盾が起きるため、ローカルを破棄してサーバー側で上書きする。
+  if (currentUser && myProfileId && S.profileId !== myProfileId) {
+    await loadMyResultFromServer();
   }
 
-  if (loadState() && S.result) {
+  if (openRoom) await goToMyRoom();
+
+  if (S.result) {
     const main  = CHARACTERS[S.result.mainCharacter];
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(6,9,26,0.92);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 10px 6px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:92vw;transition:opacity 0.4s ease;';
