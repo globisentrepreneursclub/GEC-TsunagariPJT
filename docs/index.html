@@ -336,6 +336,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div class="gec-card" style="padding:16px;margin-bottom:16px;text-align:center">
 <img id="detail-portrait-img" class="hidden" style="width:100%;max-width:280px;border-radius:12px;margin:0 auto 10px;display:block" alt="ポートレート">
 <div id="detail-portrait-status" style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:10px"></div>
+<input type="text" id="detail-portrait-hint" class="rpg-input" style="margin-bottom:10px;font-size:0.85rem" placeholder="生成条件（性別・髪型など自由記述・任意）" maxlength="80">
 <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
 <button id="detail-portrait-btn" class="btn-secondary" style="font-size:0.85rem" onclick="generateCharacterImage()">🎨 AIポートレートを生成</button>
 <button class="btn-secondary" style="font-size:0.85rem" onclick="document.getElementById('detail-portrait-upload').click()">📤 画像をアップロード</button>
@@ -458,6 +459,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div style="text-align:center;margin-bottom:20px">
 <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.18em;color:#60a5fa;margin-bottom:6px;text-transform:uppercase">MY ROOM</div>
 <h2 style="font-size:1.2rem;font-weight:900"><span id="room-nickname">???</span>の冒険の部屋</h2>
+<div id="room-id" style="font-size:0.62rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:4px"></div>
 </div>
 <div class="gec-card" style="padding:24px;margin-bottom:14px;text-align:center">
 <div class="float" style="cursor:pointer;margin-bottom:12px" onclick="showCharMessage()">
@@ -484,8 +486,40 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="goTo('quest')"><span style="color:#60a5fa">▸</span><span>クエストを見る</span></button>
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="goTo('share')"><span style="color:#60a5fa">▸</span><span>結果を共有する</span></button>
 <button id="room-mypage-btn" class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="openMyPage()"><span style="color:#60a5fa">▸</span><span>マイページを見る（公開リンク）</span></button>
-<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="window.open('members.html','_blank')"><span style="color:#60a5fa">▸</span><span>メンバー一覧を見る</span></button>
+<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="window.location.href='members.html'"><span style="color:#60a5fa">▸</span><span>メンバー一覧を見る</span></button>
+<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="toggleStatusEditor()"><span style="color:#60a5fa">▸</span><span>現状（フェーズ・関心テーマ）を更新</span></button>
 </div>
+
+<div id="room-status-editor" class="gec-card hidden" style="padding:18px;margin-bottom:20px">
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">起業経験</label>
+<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px" id="room-stage-options">
+<button class="radio-option" data-value="interested" onclick="selectRoomStage(this)">起業に興味がある</button>
+<button class="radio-option" data-value="preparing" onclick="selectRoomStage(this)">起業準備中</button>
+<button class="radio-option" data-value="side" onclick="selectRoomStage(this)">副業・個人活動をしている</button>
+<button class="radio-option" data-value="founded" onclick="selectRoomStage(this)">すでに起業している</button>
+<button class="radio-option" data-value="corporate" onclick="selectRoomStage(this)">新規事業に関わっている</button>
+</div>
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">関心テーマ（複数可）</label>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px" id="room-interest-chips">
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="education">教育</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="local">地域</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="tech">テクノロジー</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="health">医療・福祉</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="env">環境</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="community">コミュニティ</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="ent">エンタメ</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="food">食</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="work">働き方</button>
+<button class="interest-chip" onclick="toggleRoomInterest(this)" data-value="undecided">まだ決まっていない</button>
+</div>
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">スキル・強み</label>
+<input type="text" id="room-skills-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem" placeholder="例：Webマーケティング、資金調達の経験など" maxlength="200">
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">目標</label>
+<input type="text" id="room-goal-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem" placeholder="例：半年以内に共同創業者を見つける" maxlength="200">
+<button class="btn-primary" style="width:100%" onclick="saveStatusUpdate()">保存する</button>
+<div id="room-status-msg" style="text-align:center;font-size:0.78rem;color:#34d399;margin-top:10px"></div>
+</div>
+
 <div style="text-align:center">
 <button style="background:none;border:none;color:rgba(255,255,255,0.25);font-size:0.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-decoration:underline" onclick="resetAndStart()">もう一度診断する</button>
 </div>

@@ -198,7 +198,8 @@ async function syncCharacterImageToSupabase() {
 // ===== 状態管理 =====
 let S = {
   nickname: '', stage: null, interests: [],
-  currentQ: 0, answers: [], result: null, characterImage: null, profileId: null
+  currentQ: 0, answers: [], result: null, characterImage: null, profileId: null,
+  portraitHint: ''
 };
 
 function saveState() {
@@ -490,6 +491,8 @@ function renderPortraitState() {
   const status = document.getElementById('detail-portrait-status');
   if (!img || !btn) return;
   status.textContent = '';
+  const hintInput = document.getElementById('detail-portrait-hint');
+  if (hintInput) hintInput.value = S.portraitHint || '';
   if (S.characterImage) {
     img.src = S.characterImage;
     img.classList.remove('hidden');
@@ -545,11 +548,13 @@ function topParameters(scores, n) {
   return Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 }
 
-function buildPortraitPrompt(main, result) {
+function buildPortraitPrompt(main, result, userHint) {
   const base = PORTRAIT_PROMPTS[main.id] || `a fantasy RPG character embodying ${main.entrepreneurType}`;
   const hints = topParameters(result.parameterScores, 2).map(p => PARAM_VISUAL_HINTS[p]).filter(Boolean);
   const extra = hints.length ? `, ${hints.join(', ')}` : '';
-  return `${base}${extra}, bust-up portrait, detailed fantasy game concept art, digital painting, highly detailed, no text, no watermark, no logo, no signature`;
+  // ユーザーが任意入力した生成条件（性別・髪型など）をそのまま自然文としてプロンプトに混ぜる
+  const custom = (userHint || '').trim() ? `, ${userHint.trim()}` : '';
+  return `${base}${extra}${custom}, bust-up portrait, detailed fantasy game concept art, digital painting, highly detailed, no text, no watermark, no logo, no signature`;
 }
 
 // 回答内容から決定的なハッシュ値を作る（同じ人が初めて生成する分には毎回同じ絵になり、
@@ -580,7 +585,10 @@ async function generateCharacterImage() {
   status.textContent = '';
 
   try {
-    const prompt = buildPortraitPrompt(main, r);
+    const hintInput = document.getElementById('detail-portrait-hint');
+    S.portraitHint = hintInput ? hintInput.value : S.portraitHint;
+    saveState();
+    const prompt = buildPortraitPrompt(main, r, S.portraitHint);
     // 初回は回答内容から決まるシード、再生成のたびにランダムなシードで変化を出す
     const seed = isRegenerate ? Math.floor(Math.random() * 1000000) : computeProfileSeed(r, S.nickname);
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`;
@@ -793,6 +801,8 @@ function renderRoom() {
   document.getElementById('room-char-type').textContent   = main.entrepreneurType;
   document.getElementById('room-title').textContent       = main.title;
   document.getElementById('room-quest-text').textContent  = main.firstQuest;
+  const idEl = document.getElementById('room-id');
+  if (idEl) idEl.textContent = S.profileId ? `ID: ${S.profileId}` : '';
 
   const mypageBtn = document.getElementById('room-mypage-btn');
   if (mypageBtn) mypageBtn.style.opacity = S.profileId ? '1' : '0.5';
@@ -806,7 +816,85 @@ function openMyPage() {
     alert('マイページの準備中です。少し待ってからもう一度お試しください。');
     return;
   }
-  window.open(`profile.html?id=${encodeURIComponent(id)}`, '_blank');
+  window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
+}
+
+// ===== マイルームからの現状（フェーズ・関心テーマ・スキル・目標）更新 =====
+let roomStatusState = { stage: null, interests: [], skills: '', goal: '' };
+
+async function toggleStatusEditor() {
+  if (!currentUser) { alert('ログインすると現状を更新できます。'); return; }
+  const editor = document.getElementById('room-status-editor');
+  const willOpen = editor.classList.contains('hidden');
+  editor.classList.toggle('hidden');
+  if (!willOpen) return;
+
+  const msg = document.getElementById('room-status-msg');
+  msg.style.color = '#93c5fd';
+  msg.textContent = '読み込み中...';
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_status');
+    if (error) { console.error('get_my_status error:', error); msg.textContent = ''; return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    const stage = row ? row.stage : null;
+    const interests = (row && row.interests) ? row.interests : [];
+    const skills = (row && row.skills) || '';
+    const goal = (row && row.goal) || '';
+    roomStatusState = { stage, interests: interests.slice(), skills, goal };
+    document.querySelectorAll('#room-stage-options button').forEach(b => b.classList.toggle('selected', b.dataset.value === stage));
+    document.querySelectorAll('#room-interest-chips button').forEach(b => b.classList.toggle('selected', interests.includes(b.dataset.value)));
+    document.getElementById('room-skills-input').value = skills;
+    document.getElementById('room-goal-input').value = goal;
+    msg.textContent = '';
+  } catch (e) {
+    console.error('toggleStatusEditor failed:', e);
+    msg.textContent = '';
+  }
+}
+
+function selectRoomStage(btn) {
+  document.querySelectorAll('#room-stage-options button').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  roomStatusState.stage = btn.dataset.value;
+}
+
+function toggleRoomInterest(btn) {
+  const v = btn.dataset.value;
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    roomStatusState.interests = roomStatusState.interests.filter(i => i !== v);
+  } else {
+    btn.classList.add('selected');
+    roomStatusState.interests.push(v);
+  }
+}
+
+async function saveStatusUpdate() {
+  if (!currentUser) return;
+  const msg = document.getElementById('room-status-msg');
+  msg.style.color = '#93c5fd';
+  msg.textContent = '保存中...';
+  const skills = document.getElementById('room-skills-input').value.trim();
+  const goal = document.getElementById('room-goal-input').value.trim();
+  try {
+    const { error } = await supabaseClient.rpc('update_my_status', {
+      p_stage: roomStatusState.stage,
+      p_interests: roomStatusState.interests,
+      p_skills: skills || null,
+      p_goal: goal || null
+    });
+    if (error) { console.error('update_my_status error:', error); msg.style.color = '#f87171'; msg.textContent = '⚠️ 保存に失敗しました'; return; }
+    S.stage = roomStatusState.stage;
+    S.interests = roomStatusState.interests.slice();
+    saveState();
+    msg.style.color = '#34d399';
+    msg.textContent = '✅ 更新しました';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+  } catch (e) {
+    console.error('saveStatusUpdate failed:', e);
+    msg.style.color = '#f87171';
+    msg.textContent = '⚠️ 保存に失敗しました';
+  }
 }
 
 function showCharMessage() {

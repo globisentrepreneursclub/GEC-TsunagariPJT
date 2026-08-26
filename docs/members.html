@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="data/characters.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;background:#06091a;min-height:100vh}
@@ -40,20 +41,18 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 
   <div id="status" style="text-align:center;color:rgba(255,255,255,0.5);font-size:0.9rem;padding:20px 0"></div>
 
-  <div id="grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px"></div>
+  <div id="grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:12px"></div>
 </div>
 
 <script>
-const CHARACTER_NAME_MAP = {
-  hero: { name: '勇者', type: 'ビジョン牽引型', emoji: '⚔️' },
-  warrior: { name: '戦士', type: '実行突破型', emoji: '🛡️' },
-  monk: { name: '僧侶', type: '共感支援型', emoji: '🙏' },
-  mage: { name: '魔法使い', type: '創造発明型', emoji: '🔮' },
-  thief: { name: 'トレジャーハンター', type: '機会発見型', emoji: '🗡️' },
-  merchant: { name: '商人', type: '事業設計型', emoji: '💰' },
-  strategist: { name: '軍師', type: '戦略分析型', emoji: '🧠' },
-  summoner: { name: '召喚士', type: 'チーム形成型', emoji: '✨' }
+const STAGE_LABELS = {
+  interested: '興味あり', preparing: '準備中', side: '副業・個人活動',
+  founded: '起業済み', corporate: '新規事業'
 };
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
 
 let allMembers = [];
 
@@ -103,15 +102,27 @@ function renderList() {
   if (q) rows = rows.filter(m => (m.nickname || '').toLowerCase().includes(q));
 
   document.getElementById('grid').innerHTML = rows.map(m => {
-    const c = CHARACTER_NAME_MAP[m.main_character] || { name: m.main_character, type: '', emoji: '❓' };
+    const c = CHARACTERS[m.main_character] || { name: m.main_character, entrepreneurType: '', emoji: '❓', strengths: [], weaknesses: [], compatibleCharacters: [] };
+    const sub = m.sub_character ? CHARACTERS[m.sub_character] : null;
     const avatar = m.character_image
       ? `<img src="${m.character_image}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;margin-bottom:8px" alt="">`
       : `<div style="font-size:2.4rem;text-align:center;margin-bottom:8px">${c.emoji}</div>`;
-    return `<a class="member-card gec-card" style="padding:12px;text-align:center" href="profile.html?id=${encodeURIComponent(m.id)}">
+    const stageLabel = m.stage ? STAGE_LABELS[m.stage] || m.stage : '';
+    const infoLine = (label, text) => text ? `<div style="font-size:0.68rem;color:rgba(255,255,255,0.55);margin-top:5px;line-height:1.4"><span style="color:#60a5fa;font-weight:700">${label}</span> ${escapeHtml(text)}</div>` : '';
+    return `<a class="member-card gec-card" style="padding:14px;text-align:center" href="profile.html?id=${encodeURIComponent(m.id)}">
       ${avatar}
-      <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.nickname || '???'}</div>
+      <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.nickname) || '???'}</div>
       <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}</div>
-      <div style="font-size:0.6rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.id}">${m.id.slice(0, 8)}</div>
+      <div style="text-align:left">
+      ${sub ? infoLine('サブ:', `${sub.emoji} ${sub.name}（${sub.entrepreneurType}）`) : ''}
+      ${infoLine('強み:', (c.strengths || []).join('、'))}
+      ${infoLine('伸びしろ:', (c.weaknesses || []).join('、'))}
+      ${infoLine('相性の良い仲間:', (c.compatibleCharacters || []).join('、'))}
+      ${stageLabel ? infoLine('📍', stageLabel) : ''}
+      ${infoLine('🛠️', m.skills)}
+      ${infoLine('🎯', m.goal)}
+      </div>
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.id}">${m.id.slice(0, 8)}</div>
     </a>`;
   }).join('');
 
