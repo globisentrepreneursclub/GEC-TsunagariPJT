@@ -77,7 +77,15 @@ async function loadMembers() {
       statusEl.textContent = '⚠️ 取得エラー: ' + error.message;
       return;
     }
-    allMembers = data || [];
+    // 同じアカウントで再診断すると行が追加されるだけなので、
+    // user_idごとに最新(created_at降順の先頭)だけ残す。匿名行(user_id無し)は名寄せできないためそのまま残す。
+    const seenUserIds = new Set();
+    allMembers = (data || []).filter(m => {
+      if (!m.user_id) return true;
+      if (seenUserIds.has(m.user_id)) return false;
+      seenUserIds.add(m.user_id);
+      return true;
+    });
     statusEl.textContent = '';
     renderList();
   } catch (e) {
