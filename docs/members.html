@@ -111,6 +111,7 @@ function renderList() {
       ${avatar}
       <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.nickname || '???'}</div>
       <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}</div>
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.id}">${m.id.slice(0, 8)}</div>
     </a>`;
   }).join('');
 
