@@ -21,6 +21,8 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 .rpg-input:focus{outline:none;border-color:#3b82f6}
 .member-card{text-decoration:none;color:inherit;display:block;transition:transform 0.15s}
 .member-card:hover{transform:translateY(-2px)}
+.interest-chip{background:rgba(255,255,255,0.04);border:1.5px solid rgba(96,165,250,0.2);color:rgba(255,255,255,0.65);border-radius:50px;padding:6px 13px;font-family:'Noto Sans JP',sans-serif;font-size:0.78rem;cursor:pointer;transition:all 0.18s;-webkit-tap-highlight-color:transparent}
+.interest-chip.selected{background:rgba(37,99,235,0.25);border-color:#60a5fa;color:#fff}
 .hidden{display:none!important}
 </style>
 </head>
@@ -32,7 +34,34 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
   <a href="index.html?openRoom=1" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.5);font-size:0.82rem;text-decoration:none;margin-bottom:12px">← マイルームに戻る</a>
   <h1 style="font-size:1.2rem;font-weight:900;text-align:center;margin-bottom:16px">🗺️ メンバー一覧</h1>
 
-  <input id="search" type="text" placeholder="ニックネームで検索..." class="rpg-input" style="margin-bottom:10px" oninput="renderList()">
+  <input id="search" type="text" placeholder="ニックネーム・スキル・目標・プロフィールで検索..." class="rpg-input" style="margin-bottom:10px" oninput="renderList()">
+
+  <div style="margin-bottom:10px">
+    <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:6px">フェーズで絞り込み</label>
+    <select id="stage-filter" class="rpg-input" style="font-size:0.85rem" onchange="renderList()">
+      <option value="">すべて</option>
+      <option value="interested">起業に興味がある</option>
+      <option value="preparing">起業準備中</option>
+      <option value="side">副業・個人活動をしている</option>
+      <option value="founded">すでに起業している</option>
+      <option value="corporate">新規事業に関わっている</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:6px">関心テーマで絞り込み（複数選択可）</label>
+    <div id="interest-filter-chips" style="display:flex;flex-wrap:wrap;gap:6px">
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="education">教育</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="local">地域</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="tech">テクノロジー</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="health">医療・福祉</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="env">環境</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="community">コミュニティ</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="ent">エンタメ</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="food">食</button>
+      <button class="interest-chip" onclick="toggleInterestFilter(this)" data-value="work">働き方</button>
+    </div>
+  </div>
 
   <label style="display:flex;align-items:center;gap:6px;margin-bottom:16px;font-size:0.78rem;color:rgba(255,255,255,0.55);cursor:pointer">
     <input type="checkbox" id="show-anonymous" onchange="renderList()">
@@ -55,6 +84,19 @@ function escapeHtml(s) {
 }
 
 let allMembers = [];
+let interestFilter = [];
+
+function toggleInterestFilter(btn) {
+  const v = btn.dataset.value;
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    interestFilter = interestFilter.filter(i => i !== v);
+  } else {
+    btn.classList.add('selected');
+    interestFilter.push(v);
+  }
+  renderList();
+}
 
 async function loadMembers() {
   const statusEl = document.getElementById('status');
@@ -96,10 +138,18 @@ async function loadMembers() {
 function renderList() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const showAnonymous = document.getElementById('show-anonymous').checked;
+  const stageFilterVal = document.getElementById('stage-filter').value;
 
   let rows = allMembers;
   if (!showAnonymous) rows = rows.filter(m => m.user_id);
-  if (q) rows = rows.filter(m => (m.nickname || '').toLowerCase().includes(q));
+  if (q) rows = rows.filter(m =>
+    (m.nickname || '').toLowerCase().includes(q) ||
+    (m.skills || '').toLowerCase().includes(q) ||
+    (m.goal || '').toLowerCase().includes(q) ||
+    (m.bio || '').toLowerCase().includes(q)
+  );
+  if (stageFilterVal) rows = rows.filter(m => m.stage === stageFilterVal);
+  if (interestFilter.length) rows = rows.filter(m => (m.interests || []).some(i => interestFilter.includes(i)));
 
   document.getElementById('grid').innerHTML = rows.map(m => {
     const c = CHARACTERS[m.main_character] || { name: m.main_character, entrepreneurType: '', emoji: '❓', strengths: [], weaknesses: [], compatibleCharacters: [] };

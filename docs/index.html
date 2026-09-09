@@ -489,6 +489,12 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <button id="room-mypage-btn" class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="openMyPage()"><span style="color:#60a5fa">▸</span><span>マイページを見る（公開リンク）</span></button>
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="window.location.href='members.html'"><span style="color:#60a5fa">▸</span><span>メンバー一覧を見る</span></button>
 <button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="toggleStatusEditor()"><span style="color:#60a5fa">▸</span><span>現状・詳細プロフィールを更新</span></button>
+<button class="btn-secondary" style="text-align:left;display:flex;align-items:center;gap:10px;font-size:0.88rem" onclick="toggleDiagnosisHistory()"><span style="color:#60a5fa">▸</span><span>診断履歴を見る</span></button>
+</div>
+
+<div id="room-history" class="gec-card hidden" style="padding:18px;margin-bottom:20px">
+<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#60a5fa;margin-bottom:12px">診断履歴</div>
+<div id="room-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
 </div>
 
 <div id="room-status-editor" class="gec-card hidden" style="padding:18px;margin-bottom:20px">

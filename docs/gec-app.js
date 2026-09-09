@@ -901,6 +901,38 @@ async function saveStatusUpdate() {
   }
 }
 
+// ===== マイルームからの診断履歴表示 =====
+async function toggleDiagnosisHistory() {
+  if (!currentUser) { alert('ログインすると診断履歴を見られます。'); return; }
+  const box = document.getElementById('room-history');
+  const willOpen = box.classList.contains('hidden');
+  box.classList.toggle('hidden');
+  if (!willOpen) return;
+
+  const listEl = document.getElementById('room-history-list');
+  listEl.innerHTML = '<div style="font-size:0.82rem;color:rgba(255,255,255,0.4)">読み込み中...</div>';
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_diagnosis_history');
+    if (error) { console.error('get_my_diagnosis_history error:', error); listEl.innerHTML = '<div style="font-size:0.82rem;color:#f87171">読み込みに失敗しました</div>'; return; }
+    if (!data || !data.length) { listEl.innerHTML = '<div style="font-size:0.82rem;color:rgba(255,255,255,0.4)">診断履歴がありません</div>'; return; }
+    listEl.innerHTML = data.map(row => {
+      const main = CHARACTERS[row.main_character];
+      const dateStr = new Date(row.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
+      const isCurrent = row.id === myProfileId;
+      return `<a href="profile.html?id=${encodeURIComponent(row.id)}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);text-decoration:none;color:#fff">
+        <span style="font-size:1.4rem">${main ? main.emoji : '❓'}</span>
+        <div style="flex:1">
+          <div style="font-size:0.85rem;font-weight:700">${main ? main.name : row.main_character}${row.is_hybrid ? ' ✨' : ''}${isCurrent ? ' <span style="font-size:0.65rem;color:#60a5fa">（現在）</span>' : ''}</div>
+          <div style="font-size:0.68rem;color:rgba(255,255,255,0.4)">${dateStr}</div>
+        </div>
+      </a>`;
+    }).join('');
+  } catch (e) {
+    console.error('toggleDiagnosisHistory failed:', e);
+    listEl.innerHTML = '<div style="font-size:0.82rem;color:#f87171">読み込みに失敗しました</div>';
+  }
+}
+
 function showCharMessage() {
   const r = S.result; if (!r) return;
   const main   = CHARACTERS[r.mainCharacter];
