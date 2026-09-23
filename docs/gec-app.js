@@ -861,10 +861,16 @@ function renderRoom() {
   if (mypageBtn) mypageBtn.style.opacity = S.profileId ? '1' : '0.5';
 }
 
-function openMyPage() {
+async function openMyPage() {
   // ログイン中はアカウント基準(myProfileId)を優先し、未ログイン時のみ
   // この端末で今取った診断(S.profileId)への「インスタントURL」にフォールバックする。
-  const id = currentUser ? (myProfileId || S.profileId) : S.profileId;
+  let id = currentUser ? (myProfileId || S.profileId) : S.profileId;
+  // 診断直後はSupabaseへの保存がまだ完了していないことがあるため、
+  // IDが未確定なら少し待って再確認してから諦める。
+  for (let i = 0; i < 5 && !id; i++) {
+    await new Promise(r => setTimeout(r, 400));
+    id = currentUser ? (myProfileId || S.profileId) : S.profileId;
+  }
   if (!id) {
     alert('マイページの準備中です。少し待ってからもう一度お試しください。');
     return;
