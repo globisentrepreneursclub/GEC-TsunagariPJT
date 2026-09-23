@@ -859,34 +859,36 @@ function renderRoom() {
 
   const mypageBtn = document.getElementById('room-mypage-btn');
   if (mypageBtn) mypageBtn.style.opacity = S.profileId ? '1' : '0.5';
-
-  // ログイン中なのに今見ている診断がアカウントに紐付いていない場合、手動で再試行できるようにする
-  const warning = document.getElementById('room-link-warning');
-  if (warning) warning.classList.toggle('hidden', !(currentUser && S.profileId && myProfileId !== S.profileId));
 }
 
 // 保存直後の非同期リンクが何らかの理由で漏れた場合に、手動で再度紐付けを試みる。
-// 同一端末のdevice_id一致による自動紐付け(claimAnonymousHistory)を明示的に呼び直すだけ。
+// currentUserの状態判定には頼らず、押された時点で必ずセッションを取り直してから
+// 同一端末のdevice_id一致による自動紐付け(claimAnonymousHistory)を実行する。
 async function retryLinkAccount() {
-  if (!currentUser) return;
   const warning = document.getElementById('room-link-warning');
   const originalHtml = warning ? warning.innerHTML : '';
   if (warning) warning.innerHTML = '<span style="font-size:0.72rem;color:rgba(255,255,255,0.5)">確認中...</span>';
   try {
+    if (supabaseClient) {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentUser = session ? session.user : null;
+    }
+    if (!currentUser) {
+      if (warning) warning.innerHTML = '<span style="font-size:0.72rem;color:#f87171">ログインされていません</span>';
+      setTimeout(() => { if (warning) warning.innerHTML = originalHtml; }, 2500);
+      return;
+    }
     await claimAnonymousHistory();
     await resolveMyProfileId();
-    if (myProfileId === S.profileId) {
-      S.profileId = myProfileId;
-      saveState();
-    }
+    const linked = !!myProfileId && myProfileId === S.profileId;
+    if (linked) { S.profileId = myProfileId; saveState(); }
     renderRoom();
-    if (warning && warning.classList.contains('hidden')) {
-      const okMsg = document.createElement('div');
-      okMsg.style.cssText = 'text-align:center;margin-top:10px;font-size:0.72rem;color:#34d399';
-      okMsg.textContent = '✅ 紐付けを更新しました';
-      warning.after(okMsg);
-      setTimeout(() => okMsg.remove(), 3000);
-    }
+    if (warning) warning.innerHTML = originalHtml;
+    const msg = document.createElement('div');
+    msg.style.cssText = `text-align:center;margin-top:8px;font-size:0.72rem;color:${linked ? '#34d399' : 'rgba(255,255,255,0.4)'}`;
+    msg.textContent = linked ? '✅ 紐付けを更新しました' : 'この端末に紐付け対象の診断が見つかりませんでした';
+    warning.after(msg);
+    setTimeout(() => msg.remove(), 3500);
   } catch (e) {
     console.error('retryLinkAccount failed:', e);
     if (warning) warning.innerHTML = originalHtml;
