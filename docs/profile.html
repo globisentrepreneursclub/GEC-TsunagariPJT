@@ -60,6 +60,10 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 
     <div id="profile-current-card" class="gec-card hidden" style="padding:20px;margin-bottom:20px">
       <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#60a5fa;margin-bottom:14px">現状</div>
+      <div id="profile-facebook-row" class="hidden" style="margin-bottom:12px">
+        <a id="profile-facebook-link" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:#60a5fa;text-decoration:none">📘 Facebookを見る</a>
+      </div>
+      <div id="profile-globis-row" class="hidden" style="margin-bottom:12px"><span class="sec-chip">🎓 <span id="profile-globis-text"></span></span></div>
       <div id="profile-stage-row" class="hidden" style="margin-bottom:12px"><span class="sec-chip">📍 <span id="profile-stage-text"></span></span></div>
       <div id="profile-skills-row" class="hidden" style="margin-bottom:12px">
         <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:4px">🛠️ スキル・強み</div>
@@ -193,11 +197,20 @@ async function loadProfile() {
     document.getElementById('profile-avatar-emoji').textContent = main ? main.emoji : '⚔️';
     document.getElementById('profile-hybrid-badge').classList.toggle('hidden', !data.is_hybrid);
 
+    const hasFacebook = !!data.facebook_url;
+    const hasGlobis = !!data.globis_cohort;
     const hasStage  = !!data.stage;
     const hasSkills = !!data.skills;
     const hasGoal   = !!data.goal;
     const hasBio    = !!data.bio;
-    document.getElementById('profile-current-card').classList.toggle('hidden', !(hasStage || hasSkills || hasGoal || hasBio));
+    document.getElementById('profile-current-card').classList.toggle('hidden', !(hasFacebook || hasGlobis || hasStage || hasSkills || hasGoal || hasBio));
+    document.getElementById('profile-facebook-row').classList.toggle('hidden', !hasFacebook);
+    if (hasFacebook) {
+      const url = /^https?:\/\//.test(data.facebook_url) ? data.facebook_url : `https://${data.facebook_url}`;
+      document.getElementById('profile-facebook-link').href = url;
+    }
+    document.getElementById('profile-globis-row').classList.toggle('hidden', !hasGlobis);
+    if (hasGlobis) document.getElementById('profile-globis-text').textContent = data.globis_cohort;
     document.getElementById('profile-stage-row').classList.toggle('hidden', !hasStage);
     if (hasStage) document.getElementById('profile-stage-text').textContent = STAGE_LABELS[data.stage] || data.stage;
     document.getElementById('profile-skills-row').classList.toggle('hidden', !hasSkills);

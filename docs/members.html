@@ -188,12 +188,13 @@ function renderList() {
     return `<a class="member-card gec-card" style="padding:14px;text-align:center" href="profile.html?id=${encodeURIComponent(m.id)}">
       ${avatar}
       <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.nickname) || '???'}</div>
-      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}${m.facebook_url ? ' ・📘' : ''}</div>
       <div style="text-align:left">
       ${sub ? infoLine('サブ:', `${sub.emoji} ${sub.name}（${sub.entrepreneurType}）`) : ''}
       ${infoLine('強み:', (c.strengths || []).join('、'))}
       ${infoLine('伸びしろ:', (c.weaknesses || []).join('、'))}
       ${infoLine('相性の良い仲間:', (c.compatibleCharacters || []).join('、'))}
+      ${infoLine('🎓', m.globis_cohort)}
       ${stageLabel ? infoLine('📍', stageLabel) : ''}
       ${infoLine('🛠️', m.skills)}
       ${infoLine('🎯', m.goal)}

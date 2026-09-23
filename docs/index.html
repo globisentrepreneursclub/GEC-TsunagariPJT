@@ -498,6 +498,11 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 </div>
 
 <div id="room-status-editor" class="gec-card hidden" style="padding:18px;margin-bottom:20px">
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">Facebookリンク <span style="color:#f87171">*</span></label>
+<input type="url" id="room-facebook-input" class="rpg-input" style="margin-bottom:6px;font-size:0.85rem" placeholder="https://www.facebook.com/your.profile" maxlength="200">
+<p style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin:0 0 18px">GEC内での相互連絡のため、Facebookのプロフィールリンクの登録をお願いします</p>
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">GLOBIS 校舎・期 <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);font-weight:400">（任意）</span></label>
+<input type="text" id="room-globis-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem" placeholder="例：東京校、2024期" maxlength="100">
 <label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">起業経験</label>
 <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px" id="room-stage-options">
 <button class="radio-option" data-value="interested" onclick="selectRoomStage(this)">起業に興味がある</button>
@@ -541,6 +546,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20260923c"></script>
+<script src="gec-app.js?v=20260923e"></script>
 </body>
 </html>
