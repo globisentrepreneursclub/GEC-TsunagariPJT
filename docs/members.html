@@ -30,7 +30,12 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 
 <div class="gec-logo"><div class="gec-logo-mark"><span></span><span></span><span></span><span></span></div><div class="gec-logo-text">GEC · FOUNDER QUEST</div></div>
 
-<div style="max-width:720px;margin:0 auto;padding:0 20px 60px">
+<div id="login-gate" class="hidden" style="max-width:360px;margin:60px auto;padding:0 20px;text-align:center">
+  <p style="font-size:0.88rem;color:rgba(255,255,255,0.6);margin-bottom:20px">メンバー一覧を見るにはGoogleログインが必要です</p>
+  <button onclick="gateLogin()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(96,165,250,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:10px 22px;font-size:0.85rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif">Googleでログイン</button>
+</div>
+
+<div id="members-content" class="hidden" style="max-width:720px;margin:0 auto;padding:0 20px 60px">
   <a href="index.html?openRoom=1" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.5);font-size:0.82rem;text-decoration:none;margin-bottom:12px">← マイルームに戻る</a>
   <h1 style="font-size:1.2rem;font-weight:900;text-align:center;margin-bottom:16px">🗺️ メンバー一覧</h1>
 
@@ -85,6 +90,28 @@ function escapeHtml(s) {
 
 let allMembers = [];
 let interestFilter = [];
+let sbClient = null;
+
+async function gateLogin() {
+  if (!sbClient) return;
+  await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+}
+
+async function init() {
+  if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
+    document.getElementById('status').textContent = '⚠️ config.js が見つからないか未設定です。';
+    document.getElementById('members-content').classList.remove('hidden');
+    return;
+  }
+  sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) {
+    document.getElementById('login-gate').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('members-content').classList.remove('hidden');
+  loadMembers();
+}
 
 function toggleInterestFilter(btn) {
   const v = btn.dataset.value;
@@ -100,15 +127,10 @@ function toggleInterestFilter(btn) {
 
 async function loadMembers() {
   const statusEl = document.getElementById('status');
-  if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
-    statusEl.textContent = '⚠️ config.js が見つからないか未設定です。';
-    return;
-  }
   statusEl.textContent = '読み込み中...';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   try {
-    const { data, error } = await sb
+    const { data, error } = await sbClient
       .from('public_profiles')
       .select('*')
       .order('created_at', { ascending: false })
@@ -182,7 +204,7 @@ function renderList() {
   }
 }
 
-loadMembers();
+init();
 </script>
 </body>
 </html>

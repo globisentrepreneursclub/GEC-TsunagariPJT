@@ -250,6 +250,8 @@ function createParticles() {
 
 // ===== 画面遷移 =====
 function goTo(id) {
+  // マイルームはアカウントに紐づく画面のため、未ログインなら必ずログインへ誘導する
+  if (id === 'room' && !currentUser) { requireLoginThenGoTo('room'); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const t = document.getElementById('screen-' + id);
   if (!t) return;
@@ -981,27 +983,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await initAuth();
 
-  // Googleログイン必須の画面（診断開始）へ、ログイン後のリダイレクトから戻ってきた場合
-  if (nextScreen && currentUser) goTo(nextScreen);
-
   // ログイン中は「アカウントの最新診断」が正。この端末のローカル状態が
   // 別の診断（他端末で取った分と食い違う、または端末側だけ別の匿名診断が残っている）
   // を指している場合は矛盾が起きるため、ローカルを破棄してサーバー側で上書きする。
+  // （next/openRoomの画面遷移がこのデータに依存するため、遷移判定より先に済ませる）
   if (currentUser && myProfileId && S.profileId !== myProfileId) {
     await loadMyResultFromServer();
   }
 
-  if (openRoom) {
-    // ローカルにすでに結果があればそのままマイルームへ（未ログインでも可）。
+  let routedToRoom = false;
+
+  if (nextScreen && currentUser) {
+    // Googleログイン必須の画面へ、ログイン後のリダイレクトから戻ってきた場合
+    goTo(nextScreen);
+    routedToRoom = (nextScreen === 'room');
+  } else if (openRoom) {
+    // ローカルにすでに結果があればそのままマイルームへ。
     // ローカルに無く、ログイン中ならアカウントのデータを取得してから遷移する。
     if (S.result) {
       goTo('room');
+      routedToRoom = true;
     } else if (currentUser) {
       await goToMyRoom();
+      routedToRoom = true;
     }
+  } else if (currentUser && S.result) {
+    // ブックマーク等でトップに直接来た場合も、ログイン済み＆診断済みなら自動でマイルームへ
+    goTo('room');
+    routedToRoom = true;
   }
 
-  if (S.result && !openRoom) {
+  if (S.result && !routedToRoom) {
     const main  = CHARACTERS[S.result.mainCharacter];
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(6,9,26,0.92);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 10px 6px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:92vw;transition:opacity 0.4s ease;';
