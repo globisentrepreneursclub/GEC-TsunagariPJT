@@ -125,7 +125,11 @@ let sbClient = null;
 
 async function gateLogin() {
   if (!sbClient) return;
-  await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+  // redirectToにこのページ自身のURLを使うと「許可済みリダイレクトURL」と一致せずログインが
+  // 失敗するため、常にindex.htmlへ戻し、戻り先はsessionStorage経由でindex.html側に伝える。
+  sessionStorage.setItem('fq_return_url', window.location.href);
+  const indexUrl = new URL('index.html', window.location.href).href;
+  await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: indexUrl } });
 }
 
 async function init() {

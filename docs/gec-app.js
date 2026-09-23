@@ -51,12 +51,15 @@ async function loginWithGoogle() {
   });
 }
 
-// ログイン後にOAuthリダイレクトで戻ってきた際、続きの画面に自動で進めるための版
+// ログイン後にOAuthリダイレクトで戻ってきた際、続きの画面に自動で進めるための版。
+// redirectToにクエリを足すとSupabase側の「許可済みリダイレクトURL」と一致しなくなり
+// ログイン自体が失敗するため、行き先はURLではなくsessionStorageに持たせる。
 async function loginWithGoogleThen(nextScreen) {
   if (!supabaseClient) return;
+  sessionStorage.setItem('fq_next_screen', nextScreen);
   await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}${window.location.pathname}?next=${encodeURIComponent(nextScreen)}` }
+    options: { redirectTo: window.location.origin + window.location.pathname }
   });
 }
 
@@ -978,10 +981,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadState(); // この端末のローカル状態があれば先に読み込んでおく
 
   const openRoom = new URLSearchParams(location.search).get('openRoom') === '1';
-  const nextScreen = new URLSearchParams(location.search).get('next');
-  if (openRoom || nextScreen) history.replaceState(null, '', location.pathname);
+  if (openRoom) history.replaceState(null, '', location.pathname);
 
   await initAuth();
+
+  // members.html/profile.htmlのログインゲートから来た場合、元のページに戻す
+  // （OAuthのredirectToは常に自ページ固定なので、行き先はsessionStorage経由）
+  const pendingReturnUrl = sessionStorage.getItem('fq_return_url');
+  if (pendingReturnUrl && currentUser) {
+    sessionStorage.removeItem('fq_return_url');
+    window.location.replace(pendingReturnUrl);
+    return;
+  }
 
   // ログイン中は「アカウントの最新診断」が正。この端末のローカル状態が
   // 別の診断（他端末で取った分と食い違う、または端末側だけ別の匿名診断が残っている）
@@ -992,6 +1003,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   let routedToRoom = false;
+  const nextScreen = sessionStorage.getItem('fq_next_screen');
+  if (nextScreen) sessionStorage.removeItem('fq_next_screen');
 
   if (nextScreen && currentUser) {
     // Googleログイン必須の画面へ、ログイン後のリダイレクトから戻ってきた場合
