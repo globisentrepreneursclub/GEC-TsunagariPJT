@@ -898,13 +898,30 @@ async function retryLinkAccount() {
     }
     await claimAnonymousHistory();
     await resolveMyProfileId();
-    const linked = !!myProfileId && myProfileId === S.profileId;
-    if (linked) { S.profileId = myProfileId; saveState(); }
+    let linked = !!myProfileId && myProfileId === S.profileId;
+    let created = false;
+
+    // それでも紐付け対象が見つからない場合、今表示中の診断結果を
+    // アカウント紐付き済みの新規レコードとしてこの場で作成する。
+    if (!linked && !myProfileId && S.result) {
+      const newId = await saveResultToSupabase(S.result);
+      if (newId) {
+        S.profileId = newId;
+        myProfileId = newId;
+        saveState();
+        linked = true;
+        created = true;
+      }
+    } else if (linked) {
+      S.profileId = myProfileId;
+      saveState();
+    }
+
     renderRoom();
     if (warning) warning.innerHTML = originalHtml;
     const msg = document.createElement('div');
     msg.style.cssText = `text-align:center;margin-top:8px;font-size:0.72rem;color:${linked ? '#34d399' : 'rgba(255,255,255,0.4)'}`;
-    msg.textContent = linked ? '✅ 紐付けを更新しました' : 'この端末に紐付け対象の診断が見つかりませんでした';
+    msg.textContent = created ? '✅ アカウントに新しい診断を作成しました' : linked ? '✅ 紐付けを更新しました' : '紐付け対象の診断が見つかりませんでした';
     warning.after(msg);
     setTimeout(() => msg.remove(), 3500);
   } catch (e) {
