@@ -1,0 +1,33 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # 毎日 UTC 03:00（JST 12:00）に実行。無料プランは7日間APIアクセスが無いと
+    # 自動で一時停止するため、定期的に軽いリクエストを送って停止を防ぐ。
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Supabase credentials from secret
+        run: |
+          cat <<'EOF' > /tmp/config.js
+          ${{ secrets.CONFIGJS }}
+          EOF
+          node -e "
+            const fs = require('fs');
+            const content = fs.readFileSync('/tmp/config.js', 'utf8');
+            const urlMatch = content.match(/SUPABASE_URL\s*=\s*['\"]([^'\"]+)['\"]/);
+            const keyMatch = content.match(/SUPABASE_ANON_KEY\s*=\s*['\"]([^'\"]+)['\"]/);
+            fs.writeFileSync(process.env.GITHUB_ENV, \`SUPABASE_URL=\${urlMatch[1]}\nSUPABASE_ANON_KEY=\${keyMatch[1]}\n\`, { flag: 'a' });
+          "
+
+      - name: Ping Supabase REST API
+        run: |
+          curl -sf "$SUPABASE_URL/rest/v1/public_profiles?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -o /dev/null
+          echo "Supabase project pinged successfully."
