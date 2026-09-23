@@ -472,6 +472,10 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.18em;color:#60a5fa;margin-bottom:6px;text-transform:uppercase">MY ROOM</div>
 <h2 style="font-size:1.2rem;font-weight:900"><span id="room-nickname">???</span>の冒険の部屋</h2>
 <div id="room-id" style="font-size:0.62rem;color:rgba(255,255,255,0.3);font-family:monospace;margin-top:4px"></div>
+<div id="room-link-warning" class="hidden" style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+<span style="font-size:0.72rem;color:#fbbf24">⚠️ この診断がアカウントに紐付いていない可能性があります</span>
+<button style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:20px;padding:4px 12px;font-size:0.72rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif" onclick="retryLinkAccount()">🔄 紐付けを更新</button>
+</div>
 </div>
 <div class="gec-card" style="padding:24px;margin-bottom:14px;text-align:center">
 <div class="float" style="cursor:pointer;margin-bottom:12px" onclick="showCharMessage()">
@@ -566,6 +570,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20260923j"></script>
+<script src="gec-app.js?v=20260923k"></script>
 </body>
 </html>

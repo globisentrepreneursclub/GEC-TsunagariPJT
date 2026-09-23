@@ -859,6 +859,38 @@ function renderRoom() {
 
   const mypageBtn = document.getElementById('room-mypage-btn');
   if (mypageBtn) mypageBtn.style.opacity = S.profileId ? '1' : '0.5';
+
+  // ログイン中なのに今見ている診断がアカウントに紐付いていない場合、手動で再試行できるようにする
+  const warning = document.getElementById('room-link-warning');
+  if (warning) warning.classList.toggle('hidden', !(currentUser && S.profileId && myProfileId !== S.profileId));
+}
+
+// 保存直後の非同期リンクが何らかの理由で漏れた場合に、手動で再度紐付けを試みる。
+// 同一端末のdevice_id一致による自動紐付け(claimAnonymousHistory)を明示的に呼び直すだけ。
+async function retryLinkAccount() {
+  if (!currentUser) return;
+  const warning = document.getElementById('room-link-warning');
+  const originalHtml = warning ? warning.innerHTML : '';
+  if (warning) warning.innerHTML = '<span style="font-size:0.72rem;color:rgba(255,255,255,0.5)">確認中...</span>';
+  try {
+    await claimAnonymousHistory();
+    await resolveMyProfileId();
+    if (myProfileId === S.profileId) {
+      S.profileId = myProfileId;
+      saveState();
+    }
+    renderRoom();
+    if (warning && warning.classList.contains('hidden')) {
+      const okMsg = document.createElement('div');
+      okMsg.style.cssText = 'text-align:center;margin-top:10px;font-size:0.72rem;color:#34d399';
+      okMsg.textContent = '✅ 紐付けを更新しました';
+      warning.after(okMsg);
+      setTimeout(() => okMsg.remove(), 3000);
+    }
+  } catch (e) {
+    console.error('retryLinkAccount failed:', e);
+    if (warning) warning.innerHTML = originalHtml;
+  }
 }
 
 async function openMyPage() {
