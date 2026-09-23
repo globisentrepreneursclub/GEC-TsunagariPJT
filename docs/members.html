@@ -39,7 +39,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
   <a href="index.html?openRoom=1" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.5);font-size:0.82rem;text-decoration:none;margin-bottom:12px">← マイルームに戻る</a>
   <h1 style="font-size:1.2rem;font-weight:900;text-align:center;margin-bottom:16px">🗺️ メンバー一覧</h1>
 
-  <input id="search" type="text" placeholder="ニックネーム・スキル・目標・プロフィールで検索..." class="rpg-input" style="margin-bottom:10px" oninput="renderList()">
+  <input id="search" type="text" placeholder="ニックネーム・スキル・目標・プロフィール・GLOBIS期/入学年で検索..." class="rpg-input" style="margin-bottom:10px" oninput="renderList()">
 
   <div style="margin-bottom:10px">
     <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:6px">フェーズで絞り込み</label>
@@ -172,7 +172,9 @@ function renderList() {
     (m.nickname || '').toLowerCase().includes(q) ||
     (m.skills || '').toLowerCase().includes(q) ||
     (m.goal || '').toLowerCase().includes(q) ||
-    (m.bio || '').toLowerCase().includes(q)
+    (m.bio || '').toLowerCase().includes(q) ||
+    String(m.globis_term ?? '').includes(q) ||
+    String(m.globis_enrollment_year ?? '').includes(q)
   );
   if (stageFilterVal) rows = rows.filter(m => m.stage === stageFilterVal);
   if (interestFilter.length) rows = rows.filter(m => (m.interests || []).some(i => interestFilter.includes(i)));
@@ -194,7 +196,7 @@ function renderList() {
       ${infoLine('強み:', (c.strengths || []).join('、'))}
       ${infoLine('伸びしろ:', (c.weaknesses || []).join('、'))}
       ${infoLine('相性の良い仲間:', (c.compatibleCharacters || []).join('、'))}
-      ${infoLine('🎓', m.globis_cohort)}
+      ${infoLine('🎓', [m.globis_term != null ? `${m.globis_term}期` : '', m.globis_enrollment_year != null ? `${m.globis_enrollment_year}年入学` : ''].filter(Boolean).join(' ・ '))}
       ${stageLabel ? infoLine('📍', stageLabel) : ''}
       ${infoLine('🛠️', m.skills)}
       ${infoLine('🎯', m.goal)}

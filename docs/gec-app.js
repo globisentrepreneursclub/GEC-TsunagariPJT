@@ -840,8 +840,8 @@ function openMyPage() {
   window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
 }
 
-// ===== マイルームからの現状（Facebook・GLOBIS校舎期・フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
-let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '', facebookUrl: '', globisCohort: '' };
+// ===== マイルームからの現状（Facebook・GLOBIS期/入学年・フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
+let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '', facebookUrl: '', globisTerm: '', globisEnrollmentYear: '' };
 
 async function toggleStatusEditor() {
   if (!currentUser) { alert('ログインすると現状を更新できます。'); return; }
@@ -863,12 +863,14 @@ async function toggleStatusEditor() {
     const goal = (row && row.goal) || '';
     const bio = (row && row.bio) || '';
     const facebookUrl = (row && row.facebook_url) || '';
-    const globisCohort = (row && row.globis_cohort) || '';
-    roomStatusState = { stage, interests: interests.slice(), skills, goal, bio, facebookUrl, globisCohort };
+    const globisTerm = (row && row.globis_term != null) ? row.globis_term : '';
+    const globisEnrollmentYear = (row && row.globis_enrollment_year != null) ? row.globis_enrollment_year : '';
+    roomStatusState = { stage, interests: interests.slice(), skills, goal, bio, facebookUrl, globisTerm, globisEnrollmentYear };
     document.querySelectorAll('#room-stage-options button').forEach(b => b.classList.toggle('selected', b.dataset.value === stage));
     document.querySelectorAll('#room-interest-chips button').forEach(b => b.classList.toggle('selected', interests.includes(b.dataset.value)));
     document.getElementById('room-facebook-input').value = facebookUrl;
-    document.getElementById('room-globis-input').value = globisCohort;
+    document.getElementById('room-globis-term-input').value = globisTerm;
+    document.getElementById('room-globis-year-input').value = globisEnrollmentYear;
     document.getElementById('room-skills-input').value = skills;
     document.getElementById('room-goal-input').value = goal;
     document.getElementById('room-bio-input').value = bio;
@@ -899,19 +901,14 @@ function toggleRoomInterest(btn) {
 async function saveStatusUpdate() {
   if (!currentUser) return;
   const msg = document.getElementById('room-status-msg');
-  const facebookUrl = document.getElementById('room-facebook-input').value.trim();
-  if (!facebookUrl) {
-    msg.style.color = '#f87171';
-    msg.textContent = '⚠️ Facebookリンクは必須です';
-    document.getElementById('room-facebook-input').focus();
-    return;
-  }
   msg.style.color = '#93c5fd';
   msg.textContent = '保存中...';
+  const facebookUrl = document.getElementById('room-facebook-input').value.trim();
   const skills = document.getElementById('room-skills-input').value.trim();
   const goal = document.getElementById('room-goal-input').value.trim();
   const bio = document.getElementById('room-bio-input').value.trim();
-  const globisCohort = document.getElementById('room-globis-input').value.trim();
+  const globisTermVal = document.getElementById('room-globis-term-input').value.trim();
+  const globisYearVal = document.getElementById('room-globis-year-input').value.trim();
   try {
     const { error } = await supabaseClient.rpc('update_my_status', {
       p_stage: roomStatusState.stage,
@@ -919,8 +916,9 @@ async function saveStatusUpdate() {
       p_skills: skills || null,
       p_goal: goal || null,
       p_bio: bio || null,
-      p_facebook_url: facebookUrl,
-      p_globis_cohort: globisCohort || null
+      p_facebook_url: facebookUrl || null,
+      p_globis_term: globisTermVal ? parseInt(globisTermVal, 10) : null,
+      p_globis_enrollment_year: globisYearVal ? parseInt(globisYearVal, 10) : null
     });
     if (error) { console.error('update_my_status error:', error); msg.style.color = '#f87171'; msg.textContent = '⚠️ 保存に失敗しました'; return; }
     S.stage = roomStatusState.stage;
