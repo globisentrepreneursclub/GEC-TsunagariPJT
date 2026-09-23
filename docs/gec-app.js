@@ -262,8 +262,8 @@ function createParticles() {
 
 // ===== 画面遷移 =====
 function goTo(id) {
-  // マイルームはアカウントに紐づく画面のため、未ログインなら必ずログインへ誘導する
-  if (id === 'room' && !currentUser) { requireLoginThenGoTo('room'); return; }
+  // マイルーム/承認画面はアカウントに紐づく画面のため、未ログインなら必ずログインへ誘導する
+  if ((id === 'room' || id === 'approve') && !currentUser) { requireLoginThenGoTo(id); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const t = document.getElementById('screen-' + id);
   if (!t) return;
@@ -272,11 +272,12 @@ function goTo(id) {
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
 
-  if (id === 'reveal') renderReveal();
-  if (id === 'detail') renderDetail();
-  if (id === 'quest')  renderQuest();
-  if (id === 'share')  renderShare();
-  if (id === 'room')   renderRoom();
+  if (id === 'reveal')   renderReveal();
+  if (id === 'detail')   renderDetail();
+  if (id === 'quest')    renderQuest();
+  if (id === 'share')    renderShare();
+  if (id === 'room')     renderRoom();
+  if (id === 'approve')  renderApprovals();
 }
 
 // ===== プロフィール =====
@@ -707,14 +708,139 @@ const HINTS = {
   summoner:['どんな専門性を持つ仲間が必要かリストしましょう','既存のネットワークから候補者を探しましょう','まず1人に声をかけてみましょう']
 };
 
-function renderQuest() {
+let myLevelInfo = null; // 最後に取得したget_my_level()の結果をキャッシュ（マイルーム/クエスト画面で共有）
+
+async function fetchMyLevelInfo() {
+  if (!currentUser || !supabaseClient) { myLevelInfo = null; return null; }
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_level');
+    if (error) { console.error('get_my_level error:', error); return myLevelInfo; }
+    const row = Array.isArray(data) ? data[0] : data;
+    myLevelInfo = row || { level: 1, pending_claim_id: null };
+    return myLevelInfo;
+  } catch (e) {
+    console.error('fetchMyLevelInfo failed:', e);
+    return myLevelInfo;
+  }
+}
+
+async function renderQuest() {
   const r = S.result; if (!r) return;
   const main = CHARACTERS[r.mainCharacter];
   document.getElementById('quest-char-name').textContent  = main.name;
   document.getElementById('quest-emoji').textContent      = main.emoji;
-  document.getElementById('quest-description').textContent = main.firstQuest;
-  const hints = HINTS[r.mainCharacter] || ['一歩ずつ、丁寧に取り組みましょう'];
-  document.getElementById('quest-hints').innerHTML = hints.map(h => `<div style="display:flex;gap:8px"><span style="color:#60a5fa">▸</span><span>${h}</span></div>`).join('');
+
+  const info = await fetchMyLevelInfo();
+  const level = info ? info.level : 1;
+  document.getElementById('quest-label').textContent = `QUEST Lv.${level}`;
+  document.getElementById('quest-description').textContent = getQuestTextForLevel(level, r.mainCharacter);
+
+  const hints = level === 1 ? (HINTS[r.mainCharacter] || null) : null;
+  document.getElementById('quest-hints-card').classList.toggle('hidden', !hints);
+  if (hints) {
+    document.getElementById('quest-hints').innerHTML = hints.map(h => `<div style="display:flex;gap:8px"><span style="color:#60a5fa">▸</span><span>${h}</span></div>`).join('');
+  }
+
+  const submitCard  = document.getElementById('quest-submit-card');
+  const pendingCard = document.getElementById('quest-pending-card');
+  if (info && info.pending_claim_id) {
+    submitCard.classList.add('hidden');
+    pendingCard.classList.remove('hidden');
+    document.getElementById('quest-pending-text').textContent = info.pending_achievement_text || '';
+    document.getElementById('quest-pending-progress').textContent = `承認 ${info.pending_approvals_count}/${info.pending_approvals_required}人`;
+    document.getElementById('quest-pending-date').textContent = info.pending_created_at ? new Date(info.pending_created_at).toLocaleDateString('ja-JP') : '';
+  } else {
+    pendingCard.classList.add('hidden');
+    submitCard.classList.toggle('hidden', !currentUser);
+    document.getElementById('quest-achievement-input').value = '';
+    document.getElementById('quest-submit-msg').textContent = '';
+  }
+}
+
+async function submitQuestClaim() {
+  if (!currentUser) { alert('ログインすると申請できます。'); return; }
+  const input = document.getElementById('quest-achievement-input');
+  const text = input.value.trim();
+  const msg = document.getElementById('quest-submit-msg');
+  if (!text) {
+    msg.style.color = '#f87171';
+    msg.textContent = '達成状況を記入してください';
+    return;
+  }
+  msg.style.color = '#93c5fd';
+  msg.textContent = '申請中...';
+  try {
+    const { error } = await supabaseClient.rpc('submit_level_claim', { p_achievement_text: text });
+    if (error) {
+      console.error('submit_level_claim error:', error);
+      msg.style.color = '#f87171';
+      msg.textContent = error.message === 'claim already pending' ? '既に申請中のクエストがあります' : '⚠️ 申請に失敗しました';
+      return;
+    }
+    msg.style.color = '#34d399';
+    msg.textContent = '✅ 申請しました';
+    await renderQuest();
+  } catch (e) {
+    console.error('submitQuestClaim failed:', e);
+    msg.style.color = '#f87171';
+    msg.textContent = '⚠️ 申請に失敗しました';
+  }
+}
+
+// ===== 仲間のクエスト承認 =====
+async function renderApprovals() {
+  const listEl = document.getElementById('approve-list');
+  listEl.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:rgba(255,255,255,0.4)">読み込み中...</div>';
+  try {
+    const { data, error } = await supabaseClient.rpc('get_pending_claims_to_approve');
+    if (error) { console.error('get_pending_claims_to_approve error:', error); listEl.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:#f87171">読み込みに失敗しました</div>'; return; }
+    if (!data || !data.length) {
+      listEl.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:rgba(255,255,255,0.4);padding:20px 0">今は承認待ちの申請がありません</div>';
+      return;
+    }
+    listEl.innerHTML = data.map(c => {
+      const main = CHARACTERS[c.main_character];
+      const dateStr = new Date(c.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+      return `<div class="gec-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:1.4rem">${main ? main.emoji : '❓'}</span>
+          <div style="flex:1">
+            <div style="font-size:0.85rem;font-weight:700">${escapeHtmlClient(c.nickname) || '???'} <span style="font-size:0.68rem;color:rgba(255,255,255,0.4)">Lv.${c.from_level}→${c.to_level}</span></div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.35)">${dateStr}</div>
+          </div>
+        </div>
+        <p style="font-size:0.85rem;line-height:1.6;color:rgba(255,255,255,0.8);white-space:pre-wrap;margin-bottom:12px">${escapeHtmlClient(c.achievement_text)}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.72rem;color:#93c5fd">承認 ${c.approvals_count}/${c.approvals_required}人</span>
+          <button class="btn-secondary" style="font-size:0.78rem;padding:8px 16px" ${c.already_approved ? 'disabled' : ''} onclick="approveClaim('${c.claim_id}', this)">${c.already_approved ? '✅ 承認済み' : '承認する'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('renderApprovals failed:', e);
+    listEl.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:#f87171">読み込みに失敗しました</div>';
+  }
+}
+
+async function approveClaim(claimId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '処理中...'; }
+  try {
+    const { error } = await supabaseClient.rpc('approve_level_claim', { p_claim_id: claimId });
+    if (error) {
+      console.error('approve_level_claim error:', error);
+      if (btn) { btn.disabled = false; btn.textContent = '承認する'; }
+      alert('承認に失敗しました: ' + error.message);
+      return;
+    }
+    await renderApprovals();
+  } catch (e) {
+    console.error('approveClaim failed:', e);
+    if (btn) { btn.disabled = false; btn.textContent = '承認する'; }
+  }
+}
+
+function escapeHtmlClient(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
 // ===== 共有 =====
@@ -893,7 +1019,7 @@ async function saveOrShareCardImage() {
 }
 
 // ===== マイルーム =====
-function renderRoom() {
+async function renderRoom() {
   const r = S.result; if (!r) return;
   const main = CHARACTERS[r.mainCharacter];
   document.getElementById('room-nickname').textContent    = S.nickname;
@@ -901,12 +1027,22 @@ function renderRoom() {
   document.getElementById('room-char-name').textContent   = main.name;
   document.getElementById('room-char-type').textContent   = main.entrepreneurType;
   document.getElementById('room-title').textContent       = main.title;
-  document.getElementById('room-quest-text').textContent  = main.firstQuest;
   const idEl = document.getElementById('room-id');
   if (idEl) idEl.textContent = S.profileId ? `ID: ${S.profileId}` : '';
 
   const mypageBtn = document.getElementById('room-mypage-btn');
   if (mypageBtn) mypageBtn.style.opacity = S.profileId ? '1' : '0.5';
+
+  const info = await fetchMyLevelInfo();
+  const level = info ? info.level : 1;
+  document.getElementById('room-level').textContent = `Lv.${level}`;
+  document.getElementById('room-quest-text').textContent = getQuestTextForLevel(level, r.mainCharacter);
+  const progressEl = document.getElementById('room-quest-progress');
+  if (info && info.pending_claim_id) {
+    progressEl.textContent = `承認待ち：${info.pending_approvals_count}/${info.pending_approvals_required}人`;
+  } else {
+    progressEl.textContent = '';
+  }
 }
 
 // 保存直後の非同期リンクが何らかの理由で漏れた場合に、手動で再度紐付けを試みる。
