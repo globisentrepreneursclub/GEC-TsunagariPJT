@@ -17,6 +17,15 @@ function getDeviceId() {
 async function saveResultToSupabase(result) {
   if (!supabaseClient) return null;
   try {
+    // サーベイ回答中(数分かかる)にセッションが失効/更新されている可能性があるため、
+    // 保存直前にセッションを取り直してcurrentUserの古い値に惑わされないようにする。
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentUser = session ? session.user : null;
+    } catch (sessionErr) {
+      console.error('getSession before save failed:', sessionErr);
+    }
+
     const freeTextAnswers = {};
     S.answers.forEach(a => { if (a && a.type === 'free_text') freeTextAnswers[a.questionId] = a.value; });
 
