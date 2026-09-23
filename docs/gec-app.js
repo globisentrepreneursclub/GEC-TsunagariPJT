@@ -740,7 +740,7 @@ function renderShare() {
   document.getElementById('share-strengths').innerHTML = main.strengths.map(s =>
     `<span style="font-size:0.72rem;padding:4px 10px;border-radius:50px;background:${main.themeColor}22;color:${main.themeColor};border:1px solid ${main.themeColor}44">${s}</span>`).join('');
 
-  const txt = `私の起業家タイプは「${main.name}」でした。\n${main.catchcopy}\n\nあなたはどのキャラになる？\n#FounderQuest #起業家RPG診断 #GEC`;
+  const txt = `私の起業家タイプは「${main.name}」でした。\n${main.catchcopy}\n\nあなたはどのキャラになる？\n${getShareUrl()}\n\n#FounderQuest #起業家RPG診断 #GEC`;
   document.getElementById('share-text-area').textContent = txt;
 }
 
@@ -767,13 +767,18 @@ function getShareUrl() {
   return id ? `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}profile.html?id=${encodeURIComponent(id)}` : window.location.origin + window.location.pathname;
 }
 
+// 共有テキスト（share-text-area）に診断URLを埋め込み済みのため、
+// 各SNSのintentにURLを別パラメータで重ねて渡すと同じリンクが二重に入ってしまう。
+// テキストだけを渡し、URLはテキスト内のリンクとして機能させる。
 function shareToX() {
   const text = document.getElementById('share-text-area').textContent;
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(getShareUrl())}`;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');
 }
 
 function shareToLine() {
+  // LINEのシェアエンドポイントはurlパラメータが必須のため、こちらだけは
+  // 別パラメータでも渡す（本文内にも同じURLが入るが、LINE側の仕様上こちらが必要）。
   const text = document.getElementById('share-text-area').textContent;
   const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');
