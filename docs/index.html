@@ -146,9 +146,9 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <div style="text-align:center"><div style="font-size:1.8rem;margin-bottom:4px">✨</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.5)">召喚士</div></div>
 </div>
 </div>
-<button class="btn-primary" style="width:100%;margin-bottom:16px;font-size:1.05rem;padding:16px" onclick="goTo('start')">無料で診断する</button>
+<button class="btn-primary" style="width:100%;margin-bottom:16px;font-size:1.05rem;padding:16px" onclick="requireLoginThenGoTo('start')">Googleでログインして診断する</button>
 <div style="display:flex;justify-content:center;gap:20px;font-size:0.75rem;color:rgba(255,255,255,0.35)">
-<span>⏱ 約5〜7分</span><span>🔐 登録不要</span><span>💡 経験不問</span>
+<span>⏱ 約5〜7分</span><span>🔐 Googleログイン</span><span>💡 経験不問</span>
 </div>
 </div>
 </div>
@@ -179,7 +179,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 </div>
 <div style="display:flex;gap:10px">
 <button class="btn-secondary" style="flex:1" onclick="goTo('top')">← 戻る</button>
-<button class="btn-primary" style="flex:2" onclick="goTo('profile')">診断を始める →</button>
+<button class="btn-primary" style="flex:2" onclick="requireLoginThenGoTo('profile')">診断を始める →</button>
 </div>
 </div>
 </div>
@@ -541,6 +541,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20260827a"></script>
+<script src="gec-app.js?v=20260923a"></script>
 </body>
 </html>

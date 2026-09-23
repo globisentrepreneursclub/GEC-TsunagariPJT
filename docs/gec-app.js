@@ -51,6 +51,22 @@ async function loginWithGoogle() {
   });
 }
 
+// ログイン後にOAuthリダイレクトで戻ってきた際、続きの画面に自動で進めるための版
+async function loginWithGoogleThen(nextScreen) {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}${window.location.pathname}?next=${encodeURIComponent(nextScreen)}` }
+  });
+}
+
+// 診断はGoogleログイン必須。未ログインならログインへ誘導し、ログイン済みなら通す。
+function requireLoginThenGoTo(screenId) {
+  if (currentUser) { goTo(screenId); return; }
+  if (!supabaseClient) { alert('現在ログイン機能を利用できません。しばらくしてからお試しください。'); return; }
+  loginWithGoogleThen(screenId);
+}
+
 async function logout() {
   if (!supabaseClient) return;
   await supabaseClient.auth.signOut();
@@ -960,9 +976,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadState(); // この端末のローカル状態があれば先に読み込んでおく
 
   const openRoom = new URLSearchParams(location.search).get('openRoom') === '1';
-  if (openRoom) history.replaceState(null, '', location.pathname);
+  const nextScreen = new URLSearchParams(location.search).get('next');
+  if (openRoom || nextScreen) history.replaceState(null, '', location.pathname);
 
   await initAuth();
+
+  // Googleログイン必須の画面（診断開始）へ、ログイン後のリダイレクトから戻ってきた場合
+  if (nextScreen && currentUser) goTo(nextScreen);
 
   // ログイン中は「アカウントの最新診断」が正。この端末のローカル状態が
   // 別の診断（他端末で取った分と食い違う、または端末側だけ別の匿名診断が残っている）
