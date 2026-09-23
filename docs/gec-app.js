@@ -740,7 +740,9 @@ function renderShare() {
   document.getElementById('share-strengths').innerHTML = main.strengths.map(s =>
     `<span style="font-size:0.72rem;padding:4px 10px;border-radius:50px;background:${main.themeColor}22;color:${main.themeColor};border:1px solid ${main.themeColor}44">${s}</span>`).join('');
 
-  const txt = `私の起業家タイプは「${main.name}」でした。\n${main.catchcopy}\n\nあなたはどのキャラになる？\n${getShareUrl()}\n\n#FounderQuest #起業家RPG診断 #GEC`;
+  const myPageUrl = getMyPageUrl();
+  const myPageLine = myPageUrl ? `\n\n私の診断結果はこちら\n${myPageUrl}` : '';
+  const txt = `私の起業家タイプは「${main.name}」でした。\n${main.catchcopy}\n\nあなたはどのキャラになる？\n${getDiagnoseUrl()}${myPageLine}\n\n#FounderQuest #起業家RPG診断 #GEC`;
   document.getElementById('share-text-area').textContent = txt;
 }
 
@@ -762,12 +764,23 @@ function copyShareText() {
 }
 
 // ===== SNSシェア =====
-function getShareUrl() {
-  const id = S.profileId || myProfileId;
-  return id ? `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}profile.html?id=${encodeURIComponent(id)}` : window.location.origin + window.location.pathname;
+// 誰でも診断を始められる入り口URL（常に存在する）
+function getDiagnoseUrl() {
+  return `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}index.html`;
 }
 
-// 共有テキスト（share-text-area）に診断URLを埋め込み済みのため、
+// 自分の診断結果の公開マイページURL（診断がまだ保存中/未確定なら空文字）
+function getMyPageUrl() {
+  const id = S.profileId || myProfileId;
+  return id ? `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}profile.html?id=${encodeURIComponent(id)}` : '';
+}
+
+// LINE/FacebookのURLプレビュー用には、マイページがあればそちらを優先し、無ければ診断入り口URLを使う
+function getPrimaryShareUrl() {
+  return getMyPageUrl() || getDiagnoseUrl();
+}
+
+// 共有テキスト（share-text-area）に両方のURLを埋め込み済みのため、
 // 各SNSのintentにURLを別パラメータで重ねて渡すと同じリンクが二重に入ってしまう。
 // テキストだけを渡し、URLはテキスト内のリンクとして機能させる。
 function shareToX() {
@@ -780,12 +793,12 @@ function shareToLine() {
   // LINEのシェアエンドポイントはurlパラメータが必須のため、こちらだけは
   // 別パラメータでも渡す（本文内にも同じURLが入るが、LINE側の仕様上こちらが必要）。
   const text = document.getElementById('share-text-area').textContent;
-  const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(text)}`;
+  const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getPrimaryShareUrl())}&text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');
 }
 
 function shareToFacebook() {
-  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
+  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPrimaryShareUrl())}`;
   window.open(url, '_blank', 'noopener');
 }
 
