@@ -198,7 +198,7 @@ async function loadProfile() {
     document.getElementById('profile-hybrid-badge').classList.toggle('hidden', !data.is_hybrid);
 
     const hasFacebook = !!data.facebook_url;
-    const hasGlobis = data.globis_term != null || data.globis_enrollment_year != null;
+    const hasGlobis = !!data.globis_campus || data.globis_enrollment_year != null;
     const hasStage  = !!data.stage;
     const hasSkills = !!data.skills;
     const hasGoal   = !!data.goal;
@@ -212,9 +212,9 @@ async function loadProfile() {
     document.getElementById('profile-globis-row').classList.toggle('hidden', !hasGlobis);
     if (hasGlobis) {
       const parts = [];
-      if (data.globis_term != null) parts.push(`${data.globis_term}期`);
-      if (data.globis_enrollment_year != null) parts.push(`${data.globis_enrollment_year}年入学`);
-      document.getElementById('profile-globis-text').textContent = parts.join(' ・ ');
+      if (data.globis_enrollment_year != null) parts.push(`${data.globis_enrollment_year}期`);
+      if (data.globis_campus) parts.push(data.globis_campus);
+      document.getElementById('profile-globis-text').textContent = parts.join(' 　');
     }
     document.getElementById('profile-stage-row').classList.toggle('hidden', !hasStage);
     if (hasStage) document.getElementById('profile-stage-text').textContent = STAGE_LABELS[data.stage] || data.stage;

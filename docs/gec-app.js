@@ -752,6 +752,29 @@ function copyShareText() {
   }
 }
 
+// ===== SNSシェア =====
+function getShareUrl() {
+  const id = S.profileId || myProfileId;
+  return id ? `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}profile.html?id=${encodeURIComponent(id)}` : window.location.origin + window.location.pathname;
+}
+
+function shareToX() {
+  const text = document.getElementById('share-text-area').textContent;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(getShareUrl())}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+function shareToLine() {
+  const text = document.getElementById('share-text-area').textContent;
+  const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+function shareToFacebook() {
+  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
+  window.open(url, '_blank', 'noopener');
+}
+
 // ===== 自己紹介カード画像 =====
 function showImageMsg(text, color) {
   const msg = document.getElementById('image-msg');
@@ -840,8 +863,8 @@ function openMyPage() {
   window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
 }
 
-// ===== マイルームからの現状（Facebook・GLOBIS期/入学年・フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
-let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '', facebookUrl: '', globisTerm: '', globisEnrollmentYear: '' };
+// ===== マイルームからの現状（Facebook・GLOBIS校舎/入学年・フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
+let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '', facebookUrl: '', globisCampus: '', globisEnrollmentYear: '' };
 
 async function toggleStatusEditor() {
   if (!currentUser) { alert('ログインすると現状を更新できます。'); return; }
@@ -863,13 +886,13 @@ async function toggleStatusEditor() {
     const goal = (row && row.goal) || '';
     const bio = (row && row.bio) || '';
     const facebookUrl = (row && row.facebook_url) || '';
-    const globisTerm = (row && row.globis_term != null) ? row.globis_term : '';
+    const globisCampus = (row && row.globis_campus) || '';
     const globisEnrollmentYear = (row && row.globis_enrollment_year != null) ? row.globis_enrollment_year : '';
-    roomStatusState = { stage, interests: interests.slice(), skills, goal, bio, facebookUrl, globisTerm, globisEnrollmentYear };
+    roomStatusState = { stage, interests: interests.slice(), skills, goal, bio, facebookUrl, globisCampus, globisEnrollmentYear };
     document.querySelectorAll('#room-stage-options button').forEach(b => b.classList.toggle('selected', b.dataset.value === stage));
     document.querySelectorAll('#room-interest-chips button').forEach(b => b.classList.toggle('selected', interests.includes(b.dataset.value)));
     document.getElementById('room-facebook-input').value = facebookUrl;
-    document.getElementById('room-globis-term-input').value = globisTerm;
+    document.getElementById('room-globis-campus-input').value = globisCampus;
     document.getElementById('room-globis-year-input').value = globisEnrollmentYear;
     document.getElementById('room-skills-input').value = skills;
     document.getElementById('room-goal-input').value = goal;
@@ -907,7 +930,7 @@ async function saveStatusUpdate() {
   const skills = document.getElementById('room-skills-input').value.trim();
   const goal = document.getElementById('room-goal-input').value.trim();
   const bio = document.getElementById('room-bio-input').value.trim();
-  const globisTermVal = document.getElementById('room-globis-term-input').value.trim();
+  const globisCampusVal = document.getElementById('room-globis-campus-input').value.trim();
   const globisYearVal = document.getElementById('room-globis-year-input').value.trim();
   try {
     const { error } = await supabaseClient.rpc('update_my_status', {
@@ -917,7 +940,7 @@ async function saveStatusUpdate() {
       p_goal: goal || null,
       p_bio: bio || null,
       p_facebook_url: facebookUrl || null,
-      p_globis_term: globisTermVal ? parseInt(globisTermVal, 10) : null,
+      p_globis_campus: globisCampusVal || null,
       p_globis_enrollment_year: globisYearVal ? parseInt(globisYearVal, 10) : null
     });
     if (error) { console.error('update_my_status error:', error); msg.style.color = '#f87171'; msg.textContent = '⚠️ 保存に失敗しました'; return; }

@@ -173,7 +173,7 @@ function renderList() {
     (m.skills || '').toLowerCase().includes(q) ||
     (m.goal || '').toLowerCase().includes(q) ||
     (m.bio || '').toLowerCase().includes(q) ||
-    String(m.globis_term ?? '').includes(q) ||
+    (m.globis_campus || '').toLowerCase().includes(q) ||
     String(m.globis_enrollment_year ?? '').includes(q)
   );
   if (stageFilterVal) rows = rows.filter(m => m.stage === stageFilterVal);
@@ -196,7 +196,7 @@ function renderList() {
       ${infoLine('強み:', (c.strengths || []).join('、'))}
       ${infoLine('伸びしろ:', (c.weaknesses || []).join('、'))}
       ${infoLine('相性の良い仲間:', (c.compatibleCharacters || []).join('、'))}
-      ${infoLine('🎓', [m.globis_term != null ? `${m.globis_term}期` : '', m.globis_enrollment_year != null ? `${m.globis_enrollment_year}年入学` : ''].filter(Boolean).join(' ・ '))}
+      ${infoLine('🎓', [m.globis_enrollment_year != null ? `${m.globis_enrollment_year}期` : '', m.globis_campus || ''].filter(Boolean).join(' 　'))}
       ${stageLabel ? infoLine('📍', stageLabel) : ''}
       ${infoLine('🛠️', m.skills)}
       ${infoLine('🎯', m.goal)}

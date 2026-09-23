@@ -448,7 +448,13 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <button class="btn-primary" style="width:100%;margin-bottom:8px" onclick="copyShareText()">テキストをコピー</button>
 <div style="text-align:center;font-size:0.78rem;color:#34d399;margin-bottom:6px;display:none" id="copy-msg">✅ コピーしました！</div>
 <button class="btn-primary" style="width:100%;margin-bottom:6px" id="save-image-btn" onclick="saveOrShareCardImage()">カード画像を保存・シェア</button>
-<div style="text-align:center;font-size:0.78rem;margin-bottom:20px;display:none" id="image-msg"></div>
+<div style="text-align:center;font-size:0.78rem;margin-bottom:14px;display:none" id="image-msg"></div>
+<p style="font-size:0.72rem;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:8px">SNSでシェア</p>
+<div style="display:flex;gap:10px;margin-bottom:20px">
+<button class="btn-secondary" style="flex:1;font-size:0.82rem" onclick="shareToX()">𝕏 X</button>
+<button class="btn-secondary" style="flex:1;font-size:0.82rem" onclick="shareToLine()">💬 LINE</button>
+<button class="btn-secondary" style="flex:1;font-size:0.82rem" onclick="shareToFacebook()">📘 Facebook</button>
+</div>
 <div style="display:flex;gap:10px">
 <button class="btn-secondary" style="flex:1;font-size:0.88rem" onclick="goTo('quest')">← クエスト</button>
 <button class="btn-primary" style="flex:2" onclick="goTo('room')">マイルームへ →</button>
@@ -506,11 +512,11 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">Facebookリンク <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);font-weight:400">（任意）</span></label>
 <input type="url" id="room-facebook-input" class="rpg-input" style="margin-bottom:6px;font-size:0.85rem" placeholder="https://www.facebook.com/your.profile" maxlength="200">
 <p style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin:0 0 18px">GEC内での相互連絡のため、Facebookのプロフィールリンクの登録にご協力ください</p>
-<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">GLOBIS 期・入学年 <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);font-weight:400">（任意・検索に使えます）</span></label>
+<label style="display:block;font-size:0.78rem;font-weight:700;color:#60a5fa;margin-bottom:8px">GLOBIS 校舎・入学年 <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);font-weight:400">（任意・検索に使えます）</span></label>
 <div style="display:flex;gap:10px;margin-bottom:18px">
 <div style="flex:1">
-<input type="number" id="room-globis-term-input" class="rpg-input" style="font-size:0.85rem" placeholder="例：24" inputmode="numeric">
-<p style="font-size:0.65rem;color:rgba(255,255,255,0.35);margin:4px 0 0">期</p>
+<input type="text" id="room-globis-campus-input" class="rpg-input" style="font-size:0.85rem" placeholder="例：東京校" maxlength="50">
+<p style="font-size:0.65rem;color:rgba(255,255,255,0.35);margin:4px 0 0">校舎</p>
 </div>
 <div style="flex:1">
 <input type="number" id="room-globis-year-input" class="rpg-input" style="font-size:0.85rem" placeholder="例：2024" inputmode="numeric">
@@ -560,6 +566,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20260923f"></script>
+<script src="gec-app.js?v=20260923h"></script>
 </body>
 </html>
