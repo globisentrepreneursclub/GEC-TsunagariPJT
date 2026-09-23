@@ -783,23 +783,43 @@ function getPrimaryShareUrl() {
 // 共有テキスト（share-text-area）に両方のURLを埋め込み済みのため、
 // 各SNSのintentにURLを別パラメータで重ねて渡すと同じリンクが二重に入ってしまう。
 // テキストだけを渡し、URLはテキスト内のリンクとして機能させる。
+//
+// X/LINE/Facebookのweb intentはいずれも画像添付をURL経由で受け付けないため、
+// カード画像も一緒にシェアするには端末のネイティブ共有(navigator.share)経由で
+// 画像+テキストを渡し、ユーザーにシェア先アプリを選んでもらう必要がある。
+// 対応していない環境(主にPC)では、従来通りテキストのみのweb intentにフォールバックする。
+async function shareWithImage(fallbackIntentUrl) {
+  const text = document.getElementById('share-text-area').textContent;
+  try {
+    const file = await generateCardImageFile();
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text, title: 'Founder Quest 診断結果' });
+      return;
+    }
+  } catch (e) {
+    // 画像生成失敗やユーザーによるシェアキャンセルはテキストのみの共有にフォールバック
+    console.error('shareWithImage failed, falling back to text-only share:', e);
+  }
+  window.open(fallbackIntentUrl, '_blank', 'noopener');
+}
+
 function shareToX() {
   const text = document.getElementById('share-text-area').textContent;
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank', 'noopener');
+  const fallbackUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  shareWithImage(fallbackUrl);
 }
 
 function shareToLine() {
   // LINEのシェアエンドポイントはurlパラメータが必須のため、こちらだけは
   // 別パラメータでも渡す（本文内にも同じURLが入るが、LINE側の仕様上こちらが必要）。
   const text = document.getElementById('share-text-area').textContent;
-  const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getPrimaryShareUrl())}&text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank', 'noopener');
+  const fallbackUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getPrimaryShareUrl())}&text=${encodeURIComponent(text)}`;
+  shareWithImage(fallbackUrl);
 }
 
 function shareToFacebook() {
-  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPrimaryShareUrl())}`;
-  window.open(url, '_blank', 'noopener');
+  const fallbackUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPrimaryShareUrl())}`;
+  shareWithImage(fallbackUrl);
 }
 
 // ===== 自己紹介カード画像 =====
@@ -808,6 +828,18 @@ function showImageMsg(text, color) {
   msg.textContent = text;
   msg.style.color = color;
   msg.style.display = 'block';
+}
+
+// 自己紹介カードのDOMをPNG画像化する。SNSシェア(shareWithImage)とダウンロード/
+// ネイティブ共有(saveOrShareCardImage)の両方から共通で使う。
+async function generateCardImageFile() {
+  const r = S.result; if (!r) return null;
+  const main = CHARACTERS[r.mainCharacter];
+  const cardEl = document.getElementById('share-card');
+  const canvas = await html2canvas(cardEl, { backgroundColor: '#06091a', scale: 2, useCORS: true });
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  const fileName = `founder-quest_${(S.nickname || main.name).replace(/[^\w\-぀-ヿ一-鿿]/g, '')}_${main.id}.png`;
+  return new File([blob], fileName, { type: 'image/png' });
 }
 
 async function saveOrShareCardImage() {
@@ -822,11 +854,9 @@ async function saveOrShareCardImage() {
 
   const scrollY = window.scrollY;
   try {
-    const cardEl  = document.getElementById('share-card');
-    const canvas  = await html2canvas(cardEl, { backgroundColor: '#06091a', scale: 2, useCORS: true });
-    const blob    = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    const fileName = `founder-quest_${(S.nickname || main.name).replace(/[^\w\-぀-ヿ一-鿿]/g, '')}_${main.id}.png`;
-    const file     = new File([blob], fileName, { type: 'image/png' });
+    const file = await generateCardImageFile();
+    const fileName = file.name;
+    const blob = file;
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {

@@ -29,11 +29,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 
 <div class="gec-logo"><div class="gec-logo-mark"><span></span><span></span><span></span><span></span></div><div class="gec-logo-text">GEC · FOUNDER QUEST</div></div>
 
-<div id="login-gate" class="hidden" style="max-width:360px;margin:60px auto;padding:0 20px;text-align:center">
-  <p style="font-size:0.88rem;color:rgba(255,255,255,0.6);margin-bottom:20px">マイページを見るにはGoogleログインが必要です</p>
-  <button onclick="gateLogin()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(96,165,250,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:10px 22px;font-size:0.85rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif">Googleでログイン</button>
-</div>
-
 <div id="page-content" class="hidden" style="max-width:440px;margin:0 auto;padding:12px 20px 60px">
 
   <a href="members.html" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.5);font-size:0.82rem;text-decoration:none;margin-bottom:12px">← メンバー一覧に戻る</a>
@@ -127,27 +122,15 @@ function normalizeScore(v) {
 
 let sbClient = null;
 
-async function gateLogin() {
-  if (!sbClient) return;
-  // redirectToにこのページ自身のURLを使うと「許可済みリダイレクトURL」と一致せずログインが
-  // 失敗するため、常にindex.htmlへ戻し、戻り先はsessionStorage経由でindex.html側に伝える。
-  sessionStorage.setItem('fq_return_url', window.location.href);
-  const indexUrl = new URL('index.html', window.location.href).href;
-  await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: indexUrl } });
-}
-
 async function init() {
   if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
     document.getElementById('status').textContent = '⚠️ config.js が見つからないか未設定です。';
     document.getElementById('page-content').classList.remove('hidden');
     return;
   }
+  // マイページはシェア用の公開ページのため、ログインの有無に関わらず閲覧できる
+  // (本人かどうかの判定はloadProfile内でセッションを見て行う)。
   sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data: { session } } = await sbClient.auth.getSession();
-  if (!session) {
-    document.getElementById('login-gate').classList.remove('hidden');
-    return;
-  }
   document.getElementById('page-content').classList.remove('hidden');
   loadProfile();
 }
