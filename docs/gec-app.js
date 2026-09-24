@@ -912,40 +912,23 @@ function getPrimaryShareUrl() {
 //
 // X/LINE/Facebookのweb intentはいずれも画像添付をURL経由で受け付けないため、
 // カード画像も一緒にシェアするには端末のネイティブ共有(navigator.share)経由で
-// 画像+テキストを渡し、ユーザーにシェア先アプリを選んでもらう必要がある。
-// 対応していない環境(主にPC)では、従来通りテキストのみのweb intentにフォールバックする。
-async function shareWithImage(fallbackIntentUrl) {
-  const text = document.getElementById('share-text-area').textContent;
-  try {
-    const file = await generateCardImageFile();
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text, title: 'Founder Quest 診断結果' });
-      return;
-    }
-  } catch (e) {
-    // 画像生成失敗やユーザーによるシェアキャンセルはテキストのみの共有にフォールバック
-    console.error('shareWithImage failed, falling back to text-only share:', e);
-  }
-  window.open(fallbackIntentUrl, '_blank', 'noopener');
-}
-
 function shareToX() {
   const text = document.getElementById('share-text-area').textContent;
-  const fallbackUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  shareWithImage(fallbackUrl);
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank', 'noopener');
 }
 
 function shareToLine() {
   // LINEのシェアエンドポイントはurlパラメータが必須のため、こちらだけは
   // 別パラメータでも渡す（本文内にも同じURLが入るが、LINE側の仕様上こちらが必要）。
   const text = document.getElementById('share-text-area').textContent;
-  const fallbackUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getPrimaryShareUrl())}&text=${encodeURIComponent(text)}`;
-  shareWithImage(fallbackUrl);
+  const url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getPrimaryShareUrl())}&text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank', 'noopener');
 }
 
 function shareToFacebook() {
-  const fallbackUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPrimaryShareUrl())}`;
-  shareWithImage(fallbackUrl);
+  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPrimaryShareUrl())}`;
+  window.open(url, '_blank', 'noopener');
 }
 
 // ===== 自己紹介カード画像 =====
