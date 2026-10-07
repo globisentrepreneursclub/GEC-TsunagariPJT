@@ -600,6 +600,11 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <textarea id="room-bio-input" class="rpg-input" style="margin-bottom:18px;font-size:0.85rem;resize:vertical;min-height:90px;font-family:'Noto Sans JP',sans-serif" placeholder="経歴、事業内容、これまでの取り組みなど、自由に記入してください" maxlength="1000"></textarea>
 <button class="btn-primary" style="width:100%" onclick="saveStatusUpdate()">保存する</button>
 <div id="room-status-msg" style="text-align:center;font-size:0.78rem;color:#34d399;margin-top:10px"></div>
+<label style="display:flex;align-items:flex-start;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);font-size:0.74rem;color:rgba(255,255,255,0.5);line-height:1.5;cursor:pointer">
+<input type="checkbox" id="room-reminder-checkbox" style="margin-top:2px" checked onchange="saveReminderPref(this)">
+<span>現状の更新が1年以上ない場合に、更新のお願いメールを受け取る（変更は即時反映されます）</span>
+</label>
+<div id="room-reminder-msg" style="font-size:0.7rem;margin-top:6px;min-height:1em"></div>
 </div>
 
 <div style="text-align:center">
@@ -615,6 +620,6 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
 <script src="lib/diagnosis.js"></script>
 <!-- config.js はGit管理外（.gitignore）。config.example.js をコピーして値を設定してください -->
 <script src="config.js"></script>
-<script src="gec-app.js?v=20261007a"></script>
+<script src="gec-app.js?v=20261008a"></script>
 </body>
 </html>

@@ -1,0 +1,42 @@
+name: Status Reminder
+
+# 1年以上「現状」の更新がないメンバーに、更新のお願いメールを送る。
+# 既定はドライラン。実際に送るのは、リポジトリ変数 REMINDER_LIVE が 'true' のときだけ。
+# 手動実行(workflow_dispatch)では dry_run=true を選ぶと、REMINDER_LIVE に関わらず送信しない。
+
+on:
+  schedule:
+    - cron: '0 1 * * 1' # 毎週月曜 UTC 01:00（JST 10:00）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true にすると送信せず対象人数だけ確認する'
+        default: 'true'
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: node --test scripts/send-status-reminders.test.mjs
+
+      - name: Extract Supabase URL from secret
+        run: |
+          cat <<'EOF' > /tmp/config.js
+          ${{ secrets.CONFIGJS }}
+          EOF
+          node -e "
+            const fs = require('fs');
+            const m = fs.readFileSync('/tmp/config.js', 'utf8').match(/SUPABASE_URL\s*=\s*['\"]([^'\"]+)['\"]/);
+            fs.writeFileSync(process.env.GITHUB_ENV, 'SUPABASE_URL=' + m[1] + '\n', { flag: 'a' });
+          "
+
+      - name: Send reminders
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          REMINDER_FROM: ${{ vars.REMINDER_FROM }}
+          DRY_RUN: ${{ (vars.REMINDER_LIVE == 'true' && inputs.dry_run != 'true') && 'false' || 'true' }}
+        run: node scripts/send-status-reminders.mjs

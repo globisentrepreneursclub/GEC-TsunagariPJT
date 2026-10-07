@@ -187,17 +187,34 @@ function renderAuthUI() {
   });
 }
 
+// 「最終ログイン日」用。Supabase標準のlast_sign_in_atはセッションが続く限り更新されず、
+// 毎日開いている人でも古い日付になるため、アプリを開いた事実を自前で記録する。
+// 書き込みを減らすため同じブラウザからは1時間に1回までに間引く。失敗しても本体の動作には影響させない。
+async function touchLastActive() {
+  if (!supabaseClient || !currentUser) return;
+  const key = `fq_last_touch_${currentUser.id}`;
+  try {
+    const last = parseInt(localStorage.getItem(key) || '0', 10);
+    if (Date.now() - last < 60 * 60 * 1000) return;
+    const { error } = await supabaseClient.rpc('touch_last_active');
+    if (error) { console.error('touch_last_active error:', error); return; }
+    localStorage.setItem(key, String(Date.now()));
+  } catch (e) {
+    console.error('touchLastActive failed:', e);
+  }
+}
+
 async function initAuth() {
   if (!supabaseClient) return;
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentUser = session ? session.user : null;
   renderAuthUI();
-  if (currentUser) { await claimAnonymousHistory(); await resolveMyProfileId(); }
+  if (currentUser) { await claimAnonymousHistory(); await resolveMyProfileId(); touchLastActive(); }
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session ? session.user : null;
     renderAuthUI();
-    if (event === 'SIGNED_IN') { await claimAnonymousHistory(); await resolveMyProfileId(); }
+    if (event === 'SIGNED_IN') { await claimAnonymousHistory(); await resolveMyProfileId(); touchLastActive(); }
     if (event === 'SIGNED_OUT') { myProfileId = null; renderAuthUI(); }
   });
 }
@@ -1117,6 +1134,38 @@ async function openMyPage() {
   window.location.href = `profile.html?id=${encodeURIComponent(id)}`;
 }
 
+// 更新のお願いメールの受け取り設定。チェックON=受け取る(デフォルト)、OFF=停止。
+async function loadReminderPref() {
+  const cb = document.getElementById('room-reminder-checkbox');
+  if (!cb || !supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_reminder_opt_out');
+    if (error) { console.error('get_my_reminder_opt_out error:', error); return; }
+    cb.checked = !data;
+  } catch (e) {
+    console.error('loadReminderPref failed:', e);
+  }
+}
+
+async function saveReminderPref(cb) {
+  const msg = document.getElementById('room-reminder-msg');
+  const wantsMail = cb.checked;
+  msg.style.color = '#93c5fd';
+  msg.textContent = '保存中...';
+  try {
+    const { error } = await supabaseClient.rpc('set_reminder_opt_out', { p_opt_out: !wantsMail });
+    if (error) throw error;
+    msg.style.color = '#34d399';
+    msg.textContent = wantsMail ? '✅ お願いメールを受け取る設定にしました' : '✅ お願いメールを停止しました';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+  } catch (e) {
+    console.error('saveReminderPref failed:', e);
+    cb.checked = !wantsMail; // 保存できていないので表示を元に戻す
+    msg.style.color = '#f87171';
+    msg.textContent = '⚠️ 設定を保存できませんでした';
+  }
+}
+
 // ===== マイルームからの現状（Facebook・GLOBIS校舎/入学年・フェーズ・関心テーマ・スキル・目標・詳細プロフィール）更新 =====
 let roomStatusState = { stage: null, interests: [], skills: '', goal: '', bio: '', facebookUrl: '', globisCampus: '', globisEnrollmentYear: '' };
 
@@ -1127,6 +1176,7 @@ async function toggleStatusEditor() {
   editor.classList.toggle('hidden');
   if (!willOpen) return;
 
+  loadReminderPref();
   const msg = document.getElementById('room-status-msg');
   msg.style.color = '#93c5fd';
   msg.textContent = '読み込み中...';

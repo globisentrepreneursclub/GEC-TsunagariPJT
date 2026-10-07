@@ -46,6 +46,7 @@ body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;color:#fff;backgro
       <div class="sec-chip" style="margin-bottom:10px" id="profile-char-type">-</div>
       <div style="font-size:1.6rem;font-weight:900" id="profile-char-name">-</div>
       <div id="profile-level-badge" class="hidden" style="margin-top:8px"><span id="profile-level-text" style="font-size:0.72rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;padding:4px 14px;border-radius:20px;font-weight:700">Lv.1</span></div>
+      <div id="profile-lastactive" class="hidden" style="margin-top:8px;font-size:0.72rem;color:rgba(255,255,255,0.45)"></div>
       <div id="profile-hybrid-badge" class="hidden" style="margin-top:8px"><span style="font-size:0.72rem;background:#1d4ed8;color:#fff;padding:4px 14px;border-radius:20px;font-weight:700">✨ ハイブリッドタイプ</span></div>
     </div>
 
@@ -187,7 +188,14 @@ async function loadProfile() {
       try {
         const { data: lv, error: lvErr } = await sbClient.rpc('get_public_levels', { p_user_ids: [data.user_id] });
         if (lvErr) console.error('get_public_levels error:', lvErr);
-        else if (lv && lv[0]) level = lv[0].level;
+        else if (lv && lv[0]) {
+          level = lv[0].level;
+          if (lv[0].last_active_at) {
+            const el = document.getElementById('profile-lastactive');
+            el.textContent = `🕐 最終ログイン: ${new Date(lv[0].last_active_at).toLocaleDateString('ja-JP')}`;
+            el.classList.remove('hidden');
+          }
+        }
       } catch (lvEx) {
         console.error('level fetch failed:', lvEx);
       }

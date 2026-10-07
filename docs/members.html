@@ -95,6 +95,7 @@ function escapeHtml(s) {
 let allMembers = [];
 let interestFilter = [];
 let levelByUser = {};
+let lastActiveByUser = {};
 let sbClient = null;
 
 async function init() {
@@ -151,7 +152,10 @@ async function loadMembers() {
       if (userIds.length) {
         const { data: lv, error: lvErr } = await sbClient.rpc('get_public_levels', { p_user_ids: userIds });
         if (lvErr) console.error('get_public_levels error:', lvErr);
-        else levelByUser = Object.fromEntries((lv || []).map(r => [r.user_id, r.level]));
+        else {
+          levelByUser = Object.fromEntries((lv || []).map(r => [r.user_id, r.level]));
+          lastActiveByUser = Object.fromEntries((lv || []).filter(r => r.last_active_at).map(r => [r.user_id, r.last_active_at]));
+        }
       }
     } catch (lvEx) {
       console.error('level fetch failed:', lvEx);
@@ -199,6 +203,7 @@ function renderList() {
       ${infoLine('強み:', (c.strengths || []).join('、'))}
       ${infoLine('伸びしろ:', (c.weaknesses || []).join('、'))}
       ${infoLine('相性の良い仲間:', (c.compatibleCharacters || []).join('、'))}
+      ${m.user_id && lastActiveByUser[m.user_id] ? infoLine('🕐 最終ログイン:', new Date(lastActiveByUser[m.user_id]).toLocaleDateString('ja-JP')) : ''}
       ${infoLine('🎓', [m.globis_enrollment_year != null ? `${m.globis_enrollment_year}期` : '', m.globis_campus || ''].filter(Boolean).join(' 　'))}
       ${stageLabel ? infoLine('📍', stageLabel) : ''}
       ${infoLine('🛠️', m.skills)}
