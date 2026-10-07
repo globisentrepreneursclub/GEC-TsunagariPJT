@@ -708,6 +708,14 @@ const HINTS = {
   summoner:['どんな専門性を持つ仲間が必要かリストしましょう','既存のネットワークから候補者を探しましょう','まず1人に声をかけてみましょう']
 };
 
+function showToast(text, color) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;max-width:92vw;background:rgba(6,9,26,0.95);border:1px solid rgba(96,165,250,0.35);border-radius:50px;padding:10px 18px;font-size:0.85rem;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.4s ease;color:' + (color || '#fff');
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
 let myLevelInfo = null; // 最後に取得したget_my_level()の結果をキャッシュ（マイルーム/クエスト画面で共有）
 
 async function fetchMyLevelInfo() {
@@ -825,13 +833,16 @@ async function renderApprovals() {
 async function approveClaim(claimId, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '処理中...'; }
   try {
-    const { error } = await supabaseClient.rpc('approve_level_claim', { p_claim_id: claimId });
+    const { data, error } = await supabaseClient.rpc('approve_level_claim', { p_claim_id: claimId });
     if (error) {
       console.error('approve_level_claim error:', error);
       if (btn) { btn.disabled = false; btn.textContent = '承認する'; }
       alert('承認に失敗しました: ' + error.message);
       return;
     }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row && row.leveled_up) showToast('🎉 あなたの承認でLvアップが成立しました！', '#fbbf24');
+    else if (row) showToast(`✅ 承認しました（${row.approvals_count}/${row.approvals_required}人）`, '#34d399');
     await renderApprovals();
   } catch (e) {
     console.error('approveClaim failed:', e);
@@ -1019,6 +1030,16 @@ async function renderRoom() {
   const info = await fetchMyLevelInfo();
   const level = info ? info.level : 1;
   document.getElementById('room-level').textContent = `Lv.${level}`;
+
+  // 承認はこちらが画面を開いていない間に入るため、前回見たLvより上がっていたら知らせる。
+  // 取得失敗(info=null)時にLv.1で上書きしてしまわないよう、取得できたときだけ記録する。
+  if (currentUser && info) {
+    const key = `fq_last_seen_level_${currentUser.id}`;
+    let last = 0;
+    try { last = parseInt(localStorage.getItem(key) || '0', 10); } catch (e) {}
+    if (last && level > last) showToast(`🎉 Lv.${level} にレベルアップ！`, '#fbbf24');
+    try { localStorage.setItem(key, String(level)); } catch (e) {}
+  }
   document.getElementById('room-quest-text').textContent = getQuestTextForLevel(level, r.mainCharacter);
   const progressEl = document.getElementById('room-quest-progress');
   if (info && info.pending_claim_id) {

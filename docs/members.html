@@ -94,6 +94,7 @@ function escapeHtml(s) {
 
 let allMembers = [];
 let interestFilter = [];
+let levelByUser = {};
 let sbClient = null;
 
 async function init() {
@@ -144,6 +145,17 @@ async function loadMembers() {
       seenUserIds.add(m.user_id);
       return true;
     });
+    // Lvは補助情報なので、取得に失敗しても一覧自体は表示する(未取得ならLv.1扱い)
+    try {
+      const userIds = allMembers.map(m => m.user_id).filter(Boolean);
+      if (userIds.length) {
+        const { data: lv, error: lvErr } = await sbClient.rpc('get_public_levels', { p_user_ids: userIds });
+        if (lvErr) console.error('get_public_levels error:', lvErr);
+        else levelByUser = Object.fromEntries((lv || []).map(r => [r.user_id, r.level]));
+      }
+    } catch (lvEx) {
+      console.error('level fetch failed:', lvEx);
+    }
     statusEl.textContent = '';
     renderList();
   } catch (e) {
@@ -181,7 +193,7 @@ function renderList() {
     return `<a class="member-card gec-card" style="padding:14px;text-align:center" href="profile.html?id=${encodeURIComponent(m.id)}">
       ${avatar}
       <div style="font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.nickname) || '???'}</div>
-      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}${m.facebook_url ? ' ・📘' : ''}</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45)">${m.user_id ? `<span style="color:#fbbf24;font-weight:700">Lv.${levelByUser[m.user_id] || 1}</span> ` : ''}${c.name}${m.is_hybrid ? ' ✨' : ''}${!m.user_id ? ' ・匿名' : ''}${m.facebook_url ? ' ・📘' : ''}</div>
       <div style="text-align:left">
       ${sub ? infoLine('サブ:', `${sub.emoji} ${sub.name}（${sub.entrepreneurType}）`) : ''}
       ${infoLine('強み:', (c.strengths || []).join('、'))}
