@@ -31,6 +31,27 @@
 
 <!-- ===== 一覧本体 ===== -->
 <div id="app" class="hidden p-4 md:p-6">
+  <section class="mb-8 border border-[#2a2d38] rounded-xl p-4">
+    <h2 class="font-bold mb-3">📅 イベント管理</h2>
+    <form id="ev-form" class="grid md:grid-cols-2 gap-2 text-sm" onsubmit="saveEvent(event)">
+      <input type="hidden" id="ev-id">
+      <input id="ev-title" required placeholder="タイトル" class="md:col-span-2 bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <label>開始<input id="ev-start" type="datetime-local" required class="w-full bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></label>
+      <label>終了（任意）<input id="ev-end" type="datetime-local" class="w-full bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></label>
+      <input id="ev-loc" placeholder="場所（オンライン等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <input id="ev-tags" placeholder="タグ（カンマ区切り）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <input id="ev-apply" placeholder="申し込みURL（Peatix等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <input id="ev-info" placeholder="詳細URL（Facebook・Canva等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <textarea id="ev-desc" rows="3" placeholder="説明" class="md:col-span-2 bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></textarea>
+      <label class="flex items-center gap-2"><input id="ev-pub" type="checkbox" checked> 公開する</label>
+      <div class="flex gap-2 md:justify-end">
+        <button type="button" onclick="resetEventForm()" class="border border-[#2a2d38] rounded px-3 py-1.5">クリア</button>
+        <button class="bg-yellow-500 text-black font-bold rounded px-4 py-1.5">保存</button>
+      </div>
+    </form>
+    <div id="ev-list" class="mt-4 text-sm"></div>
+  </section>
+
   <div class="flex flex-wrap items-center gap-3 mb-4">
     <h1 class="text-xl font-bold">🗂 Founder Quest 診断データ一覧</h1>
     <span id="count" class="text-sm text-gray-400"></span>
@@ -93,7 +114,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   loadData();
+  loadEvents();
 });
+
+
+// ===== イベント管理 =====
+let allEvents = [];
+const $ = id => document.getElementById(id);
+const toLocalInput = d => { if (!d) return ''; const t = new Date(d); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 16); };
+
+async function loadEvents() {
+  const { data, error } = await sbClient.rpc('admin_list_events');
+  if (error) { $('ev-list').textContent = '⚠️ ' + error.message; return; }
+  allEvents = data || [];
+  $('ev-list').innerHTML = allEvents.map(e => `<div class="flex flex-wrap items-center gap-2 border-t border-[#2a2d38] py-2">
+    <span class="whitespace-nowrap text-gray-400">${esc(new Date(e.starts_at).toLocaleString('ja-JP'))}</span>
+    <span class="font-bold">${esc(e.title)}</span>${e.is_published ? '' : '<span class="text-xs text-gray-500">（非公開）</span>'}
+    <span class="ml-auto flex gap-2">
+      <button onclick="editEvent('${esc(e.id)}')" class="text-xs border border-[#2a2d38] rounded px-2 py-1">編集</button>
+      <button onclick="deleteEvent('${esc(e.id)}')" class="text-xs text-red-400 border border-red-400/40 rounded px-2 py-1">削除</button>
+    </span></div>`).join('') || '<span class="text-gray-500">まだイベントがありません。</span>';
+}
+function resetEventForm() { $('ev-form').reset(); $('ev-id').value = ''; $('ev-pub').checked = true; }
+function editEvent(id) {
+  const e = allEvents.find(x => x.id === id); if (!e) return;
+  $('ev-id').value = e.id; $('ev-title').value = e.title; $('ev-start').value = toLocalInput(e.starts_at); $('ev-end').value = toLocalInput(e.ends_at);
+  $('ev-loc').value = e.location || ''; $('ev-tags').value = (e.tags || []).join(', '); $('ev-apply').value = e.apply_url || '';
+  $('ev-info').value = e.info_url || ''; $('ev-desc').value = e.description || ''; $('ev-pub').checked = e.is_published;
+  $('ev-form').scrollIntoView({ behavior: 'smooth' });
+}
+async function saveEvent(ev) {
+  ev.preventDefault();
+  const { error } = await sbClient.rpc('admin_save_event', {
+    p_id: $('ev-id').value || null, p_title: $('ev-title').value.trim(),
+    p_starts_at: new Date($('ev-start').value).toISOString(), p_ends_at: $('ev-end').value ? new Date($('ev-end').value).toISOString() : null,
+    p_location: $('ev-loc').value.trim(), p_description: $('ev-desc').value.trim(),
+    p_apply_url: $('ev-apply').value.trim(), p_info_url: $('ev-info').value.trim(),
+    p_tags: $('ev-tags').value.split(/[,、]/).map(s => s.trim()).filter(Boolean), p_is_published: $('ev-pub').checked
+  });
+  if (error) { alert('保存に失敗しました: ' + error.message); return; }
+  resetEventForm(); loadEvents();
+}
+async function deleteEvent(id) {
+  if (!confirm('このイベントを削除しますか？')) return;
+  const { error } = await sbClient.rpc('admin_delete_event', { p_id: id });
+  if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  loadEvents();
+}
 
 async function loadData() {
   const statusEl = document.getElementById('status');

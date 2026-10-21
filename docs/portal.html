@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEC ポータル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans JP',sans-serif;color:#fff;background:#06091a;min-height:100vh}
+a{color:inherit}
+.gec-card{background:rgba(255,255,255,0.05);border:1px solid rgba(96,165,250,0.15);border-radius:16px;padding:16px}
+.gec-logo{display:flex;align-items:center;gap:10px;justify-content:center;padding:18px 0}
+.gec-logo-mark{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:24px;height:24px}
+.gec-logo-mark span{display:block;background:#fff;border-radius:2px}
+.gec-logo-text{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.2rem;letter-spacing:0.08em}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px 60px}
+h2{font-size:1rem;font-weight:900;margin:28px 0 12px}
+.btn{display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:11px 20px;font-size:0.92rem}
+.btn.sub{background:rgba(255,255,255,0.08);border:1px solid rgba(96,165,250,0.3)}
+.muted{color:rgba(255,255,255,0.55);font-size:0.82rem}
+.tag{display:inline-block;background:rgba(37,99,235,0.2);border:1px solid rgba(96,165,250,0.35);border-radius:50px;padding:2px 10px;font-size:0.72rem;margin:2px 4px 0 0}
+.ev{margin-bottom:10px}
+.ev-date{font-family:'Barlow',sans-serif;font-weight:700;color:#60a5fa;font-size:0.9rem}
+.ev-title{font-weight:700;font-size:1rem;margin:2px 0 4px}
+.ev-desc{white-space:pre-wrap;font-size:0.85rem;color:rgba(255,255,255,0.75);margin:6px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="gec-logo"><div class="gec-logo-mark"><span></span><span></span><span></span><span></span></div><div class="gec-logo-text">GEC PORTAL</div></div>
+
+<div class="wrap">
+  <p class="muted" style="text-align:center;margin:0 0 6px">GLOBIS Entrepreneurs Club</p>
+  <h1 style="font-size:1.35rem;font-weight:900;text-align:center;margin:0 0 20px">仲間とつながる、起業家のためのポータル</h1>
+
+  <div class="grid">
+    <a class="gec-card" href="members.html" style="text-decoration:none">
+      <div style="font-weight:900">🗺️ メンバーを探す</div>
+      <div class="muted" style="margin-top:4px">スキル・フェーズ・関心テーマで仲間を検索</div>
+    </a>
+    <a class="gec-card" href="index.html" style="text-decoration:none">
+      <div style="font-weight:900">⚔️ 起業家タイプ診断</div>
+      <div class="muted" style="margin-top:4px">自分のタイプを知って、プロフィールを共有</div>
+    </a>
+  </div>
+
+  <h2>📅 これからのイベント</h2>
+  <div id="upcoming" class="muted">読み込み中...</div>
+
+  <h2 id="past-title" class="hidden">🕘 過去のイベント</h2>
+  <div id="past"></div>
+
+  <div class="gec-card" style="margin-top:28px;text-align:center">
+    <div style="font-weight:900;margin-bottom:6px">マイルーム</div>
+    <div class="muted" style="margin-bottom:10px">診断結果・現状・クエストの管理はこちら（Googleログイン）</div>
+    <a class="btn sub" href="index.html?openRoom=1">マイルームを開く</a>
+  </div>
+</div>
+
+<script>
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function safeUrl(u){return /^https?:\/\//i.test(u||'')?u:''}
+function fmt(d){return new Date(d).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'})}
+
+function card(e,isPast){
+  const apply=safeUrl(e.apply_url), info=safeUrl(e.info_url);
+  return `<div class="gec-card ev">
+    <div class="ev-date">${esc(fmt(e.starts_at))}${e.location?' ／ '+esc(e.location):''}</div>
+    <div class="ev-title">${esc(e.title)}</div>
+    ${(e.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
+    ${e.description?`<div class="ev-desc">${esc(e.description)}</div>`:''}
+    <div class="row">
+      ${apply&&!isPast?`<a class="btn" href="${esc(apply)}" target="_blank" rel="noopener noreferrer">申し込む</a>`:''}
+      ${info?`<a class="btn sub" href="${esc(info)}" target="_blank" rel="noopener noreferrer">詳細を見る</a>`:''}
+    </div></div>`;
+}
+
+(async function(){
+  const up=document.getElementById('upcoming');
+  if(typeof SUPABASE_URL==='undefined'||typeof SUPABASE_ANON_KEY==='undefined'){up.textContent='設定が読み込めませんでした。';return}
+  const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  const {data,error}=await sb.from('events').select('id,title,starts_at,ends_at,location,description,apply_url,info_url,tags').order('starts_at',{ascending:true});
+  if(error){up.textContent='イベントを読み込めませんでした。';return}
+  const now=Date.now();
+  const end=e=>new Date(e.ends_at||e.starts_at).getTime();
+  const coming=data.filter(e=>end(e)>=now);
+  const past=data.filter(e=>end(e)<now).reverse().slice(0,10);
+  up.className='';
+  up.innerHTML=coming.length?coming.map(card).join(''):'<div class="muted">現在予定されているイベントはありません。</div>';
+  if(past.length){document.getElementById('past-title').classList.remove('hidden');document.getElementById('past').innerHTML=past.map(e=>card(e,true)).join('')}
+})();
+</script>
+</body>
+</html>
