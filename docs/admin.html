@@ -20,13 +20,12 @@
 </head>
 <body>
 
-<!-- ===== パスワードゲート ===== -->
+<!-- ===== 管理者チェック ===== -->
 <div id="gate" class="min-h-screen flex items-center justify-center px-4">
   <div class="bg-[#1a1d29] border border-[#2a2d38] rounded-xl p-8 w-full max-w-sm text-center">
     <h1 class="text-lg font-bold mb-4">🔐 診断データ一覧</h1>
-    <input id="gate-pass" type="password" placeholder="パスワード" class="w-full bg-[#0f1117] border border-[#2a2d38] rounded-lg px-4 py-2 mb-3 text-white outline-none focus:border-yellow-500">
-    <button onclick="tryUnlock()" class="w-full bg-yellow-500 text-black font-bold rounded-lg py-2 hover:bg-yellow-400">開く</button>
-    <p id="gate-error" class="text-red-400 text-xs mt-3 hidden">パスワードが違います</p>
+    <p id="gate-msg" class="text-sm text-gray-300 mb-4">確認中...</p>
+    <a id="gate-link" href="index.html" class="hidden block w-full bg-yellow-500 text-black font-bold rounded-lg py-2 hover:bg-yellow-400">サイトでログインする</a>
   </div>
 </div>
 
@@ -71,41 +70,36 @@ const PARAM_ORDER = ['VISION','ACTION','EMPATHY','ANALYSIS','CREATIVE','RISK','T
 
 let allRows = [];
 let sbClient = null;
-let gatePassword = '';
-
-function tryUnlock() {
-  const val = document.getElementById('gate-pass').value;
-  if (val === 'globis') {
-    gatePassword = val;
-    document.getElementById('gate').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    initClientAndLoad();
-  } else {
-    document.getElementById('gate-error').classList.remove('hidden');
-  }
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('gate-pass').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
-});
 
-function initClientAndLoad() {
+function showGate(msg, showLink) {
+  document.getElementById('gate-msg').textContent = msg;
+  document.getElementById('gate-link').classList.toggle('hidden', !showLink);
+}
+
+// サイト本体と同じSupabaseセッションを使う。管理者(admin_users登録のGoogleアカウント)だけが開ける。
+document.addEventListener('DOMContentLoaded', async () => {
   if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
-    document.getElementById('status').textContent = '⚠️ config.js が見つからないか未設定です。config.example.js をコピーして値を設定してください。';
+    showGate('config.js が見つからないか未設定です。', false);
     return;
   }
   sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) { showGate('管理者のGoogleアカウントでサイトにログインしてから、このページを開き直してください。', true); return; }
+  const { data: ok, error } = await sbClient.rpc('is_admin');
+  if (error || !ok) { showGate('このアカウントには管理者権限がありません。', false); return; }
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
   loadData();
-}
+});
 
 async function loadData() {
   const statusEl = document.getElementById('status');
   statusEl.textContent = '読み込み中...';
   try {
-    const { data, error } = await sbClient
-      .from('diagnosis_results')
-      .select('id,device_id,nickname,stage,interests,free_text_answers,parameter_scores,main_character,sub_character,is_hybrid,created_at')
-      .order('created_at', { ascending: false })
-      .limit(1000);
+    const { data, error } = await sbClient.rpc('admin_list_diagnoses');
 
     if (error) {
       statusEl.textContent = '⚠️ 取得エラー: ' + error.message;
@@ -134,14 +128,14 @@ function renderTable() {
 
     return `<tr>
       <td class="whitespace-nowrap">${dt}</td>
-      <td>${r.nickname || ''}</td>
+      <td>${esc(r.nickname)}</td>
       <td class="whitespace-nowrap">${STAGE_LABELS[r.stage] || r.stage || ''}</td>
-      <td>${interests}</td>
-      <td class="whitespace-nowrap">${r.main_character || ''}</td>
-      <td class="whitespace-nowrap">${r.sub_character || ''}</td>
+      <td>${esc(interests)}</td>
+      <td class="whitespace-nowrap">${esc(r.main_character)}</td>
+      <td class="whitespace-nowrap">${esc(r.sub_character)}</td>
       <td>${r.is_hybrid ? '✨' : ''}</td>
       <td>${params}</td>
-      <td class="free-text">${freeText}</td>
+      <td class="free-text">${esc(freeText)}</td>
       <td><button onclick="deleteRow('${r.id}')" class="text-red-400 hover:text-red-300 text-xs border border-red-400/40 rounded px-2 py-1 whitespace-nowrap">🗑 削除</button></td>
     </tr>`;
   }).join('');
@@ -153,7 +147,7 @@ async function deleteRow(id) {
   const label = `${row.nickname || '(無名)'} / ${row.created_at ? new Date(row.created_at).toLocaleString('ja-JP') : ''}`;
   if (!confirm(`本当に削除しますか？\n${label}`)) return;
 
-  const { error } = await sbClient.rpc('delete_diagnosis_result', { row_id: id, passcode: gatePassword });
+  const { error } = await sbClient.rpc('admin_delete_diagnosis', { p_id: id });
   if (error) {
     alert('削除に失敗しました: ' + error.message);
     return;
