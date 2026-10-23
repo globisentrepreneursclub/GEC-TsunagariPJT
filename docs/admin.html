@@ -39,7 +39,7 @@
       <label>開始<input id="ev-start" type="datetime-local" required class="w-full bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></label>
       <label>終了（任意）<input id="ev-end" type="datetime-local" class="w-full bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></label>
       <input id="ev-loc" placeholder="場所（オンライン等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
-      <input id="ev-tags" placeholder="タグ（カンマ区切り）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
+      <input id="ev-tags" placeholder="タグ（カンマ区切り）" list="tag-hints" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
       <input id="ev-apply" placeholder="申し込みURL（Peatix等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
       <input id="ev-info" placeholder="詳細URL（Facebook・Canva等）" class="bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5">
       <textarea id="ev-desc" rows="3" placeholder="説明" class="md:col-span-2 bg-[#0f1117] border border-[#2a2d38] rounded px-3 py-1.5"></textarea>
@@ -49,6 +49,8 @@
         <button class="bg-yellow-500 text-black font-bold rounded px-4 py-1.5">保存</button>
       </div>
     </form>
+    <datalist id="tag-hints"><option value="教育"><option value="地域"><option value="テクノロジー"><option value="医療・福祉"><option value="環境"><option value="コミュニティ"><option value="エンタメ"><option value="食"><option value="働き方"><option value="SaaS・ソフトウェア"><option value="D2C・EC"><option value="フィンテック"><option value="海外展開"><option value="資金調達・投資"><option value="ディープテック"><option value="ソーシャルビジネス"><option value="ものづくり"><option value="起業に興味"><option value="起業準備"><option value="副業・個人活動"><option value="起業済み"><option value="新規事業"></datalist>
+    <p class="text-xs text-gray-500 mt-2">タグは、診断の関心テーマ・フェーズと同じ名前にすると「おすすめ」に反映されます（入力時に候補が出ます）。</p>
     <div id="ev-list" class="mt-4 text-sm"></div>
   </section>
 

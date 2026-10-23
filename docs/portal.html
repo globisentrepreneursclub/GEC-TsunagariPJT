@@ -50,6 +50,12 @@ h2{font-size:1rem;font-weight:900;margin:28px 0 12px}
     </a>
   </div>
 
+  <div id="reco-wrap" class="hidden">
+    <h2>✨ あなたへのおすすめ</h2>
+    <div class="muted" id="reco-note" style="margin:-6px 0 10px"></div>
+    <div id="reco"></div>
+  </div>
+
   <h2>📅 これからのイベント</h2>
   <div id="upcoming" class="muted">読み込み中...</div>
 
@@ -81,6 +87,18 @@ function card(e,isPast){
     </div></div>`;
 }
 
+const INTEREST_LABELS={education:'教育',local:'地域',tech:'テクノロジー',health:'医療・福祉',env:'環境',community:'コミュニティ',ent:'エンタメ',food:'食',work:'働き方',saas:'SaaS・ソフトウェア',d2c:'D2C・EC',fintech:'フィンテック',global:'海外展開',funding:'資金調達・投資',deeptech:'ディープテック',social:'ソーシャルビジネス',manufacturing:'ものづくり'};
+const STAGE_LABELS={interested:'起業に興味',preparing:'起業準備',side:'副業・個人活動',founded:'起業済み',corporate:'新規事業'};
+
+// イベントのタグが、自分の関心テーマ・フェーズと一致するものを、一致数の多い順に返す
+function recommend(events,status){
+  const mine=new Map();
+  (status.interests||[]).forEach(k=>INTEREST_LABELS[k]&&mine.set(INTEREST_LABELS[k],1));
+  if(STAGE_LABELS[status.stage])mine.set(STAGE_LABELS[status.stage],1);
+  return events.map(e=>({e,hits:(e.tags||[]).filter(t=>mine.has(t))})).filter(x=>x.hits.length)
+    .sort((a,b)=>b.hits.length-a.hits.length||new Date(a.e.starts_at)-new Date(b.e.starts_at));
+}
+
 (async function(){
   const up=document.getElementById('upcoming');
   if(typeof SUPABASE_URL==='undefined'||typeof SUPABASE_ANON_KEY==='undefined'){up.textContent='設定が読み込めませんでした。';return}
@@ -93,6 +111,19 @@ function card(e,isPast){
   const past=data.filter(e=>end(e)<now).reverse().slice(0,10);
   up.className='';
   up.innerHTML=coming.length?coming.map(card).join(''):'<div class="muted">現在予定されているイベントはありません。</div>';
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){
+      const {data:st}=await sb.rpc('get_my_status');
+      const status=Array.isArray(st)?st[0]:st;
+      const recs=status?recommend(coming,status):[];
+      if(recs.length){
+        document.getElementById('reco-wrap').classList.remove('hidden');
+        document.getElementById('reco-note').textContent='あなたのフェーズ・関心テーマと合うイベントです。';
+        document.getElementById('reco').innerHTML=recs.slice(0,5).map(x=>card(x.e)).join('');
+      }
+    }
+  }catch(_){}
   if(past.length){document.getElementById('past-title').classList.remove('hidden');document.getElementById('past').innerHTML=past.map(e=>card(e,true)).join('')}
 })();
 </script>
